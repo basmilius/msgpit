@@ -60,6 +60,10 @@ pub fn router(state: AppState, web_dir: &str) -> Router {
         .route("/api/messages/{id}", get(detail))
         .route("/api/messages/{id}/read", post(read))
         .route("/api/messages/{id}/dlr", post(dlr))
+        .route("/api/messages/{id}/links", post(check_links))
+        .route("/api/messages/{id}/authentication", post(authentication))
+        .route("/api/docs", get(docs))
+        .route("/api/docs/{slug}", get(doc))
         .route("/api/messages/{id}/parts/{part}", get(part))
         .route("/api/providers", get(providers))
         .route("/api/scenarios", get(scenarios))
@@ -101,12 +105,12 @@ async fn clear(State(state): State<AppState>) -> Result<StatusCode, ApiError> {
 async fn detail(
     State(state): State<AppState>,
     Path(id): Path<String>,
-) -> Result<Json<Detail>, ApiError> {
+) -> Result<Json<Value>, ApiError> {
     let mut detail = state.store.detail(id).await?.ok_or_else(missing)?;
     if detail.message.channel == "email" {
-        detail.header_list = crate::mail::headers(detail.raw_request.as_bytes());
+        mail::enrich(&mut detail);
     }
-    Ok(Json(detail))
+    Ok(Json(crate::report::detail_json(&detail)))
 }
 async fn read(
     State(state): State<AppState>,
@@ -203,6 +207,46 @@ async fn part(
     }
     Ok(response)
 }
+async fn check_links(
+    State(state): State<AppState>,
+    Path(id): Path<String>,
+) -> Result<Json<Value>, ApiError> {
+    let mut detail = state.store.detail(id).await?.ok_or_else(missing)?;
+    mail::enrich(&mut detail);
+    let links = crate::html::links(detail.html.as_deref(), detail.text.as_deref());
+    Ok(Json(
+        json!({"links":state.network.check_links(&links).await}),
+    ))
+}
+
+async fn authentication(
+    State(state): State<AppState>,
+    Path(id): Path<String>,
+) -> Result<Json<Value>, ApiError> {
+    let mut detail = state.store.detail(id).await?.ok_or_else(missing)?;
+    if detail.message.channel != "email" {
+        return Err(missing());
+    }
+    if state.network.auth.is_none() {
+        return Err(ApiError(
+            StatusCode::CONFLICT,
+            "DNS lookups are switched off with MSGPIT_DNS.".into(),
+        ));
+    }
+    mail::enrich(&mut detail);
+    let (report, lookups) = crate::authentication::check(&detail, &state.network).await;
+    Ok(Json(json!({"report":report,"lookups":lookups})))
+}
+
+async fn docs() -> Json<Value> {
+    Json(json!({"pages":crate::docs::index()}))
+}
+async fn doc(Path(slug): Path<String>) -> Result<Json<Value>, ApiError> {
+    let markdown = crate::docs::page(&slug)
+        .ok_or_else(|| ApiError(StatusCode::NOT_FOUND, "Page not found.".into()))?;
+    Ok(Json(json!({"slug":slug,"markdown":markdown})))
+}
+
 async fn dlr(
     State(state): State<AppState>,
     Path(id): Path<String>,
@@ -246,19 +290,22 @@ async fn providers(State(state): State<AppState>) -> Json<Value> {
 }
 async fn scenarios() -> Json<Value> {
     Json(
-        json!({"scenarios":Scenario::ALL.into_iter().map(|s| json!({"id":s,"recipient":s.recipient()})).collect::<Vec<_>>()}),
+        json!({"scenarios":Scenario::ALL.into_iter().map(|s| json!({"id":s,"scenario":s,"recipient":s.recipient(),"description":s.description()})).collect::<Vec<_>>()}),
     )
-}
-#[derive(Deserialize)]
-struct ScenarioInput {
-    scenario: Option<Scenario>,
 }
 async fn scenario(
     State(state): State<AppState>,
-    Json(input): Json<ScenarioInput>,
+    Json(input): Json<Value>,
 ) -> Result<Json<Value>, ApiError> {
-    state.store.set_scenario(input.scenario).await?;
-    Ok(Json(json!({"scenario":input.scenario})))
+    let scenario = match input.get("scenario") {
+        Some(Value::String(s)) if !s.is_empty() => Some(
+            serde_json::from_value::<Scenario>(json!(s))
+                .map_err(|_| ApiError(StatusCode::BAD_REQUEST, "Unknown scenario.".into()))?,
+        ),
+        _ => None,
+    };
+    state.store.set_scenario(scenario).await?;
+    Ok(Json(json!({"scenario":scenario})))
 }
 
 async fn provider_request(

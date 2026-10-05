@@ -284,7 +284,7 @@ async fn one_shot_and_magic_failures_never_store_messages() {
         call(app, "POST", "/api/scenario", json!({"scenario":"unknown"}))
             .await
             .0,
-        StatusCode::UNPROCESSABLE_ENTITY
+        StatusCode::BAD_REQUEST
     );
 }
 

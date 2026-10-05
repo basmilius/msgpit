@@ -1,0 +1,21 @@
+{
+    "key": "v=DKIM1; k=rsa; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAvKRVm+lFWqzVLbqNIjXV+Y5YP0aPawtsm1kovFpEFgD8SFWsaa6uJWxj3xK/u/SP97dsnPcPPEYqzZrlmQGCYfEoT71ERpPi8V4id8EhoMG1K8FBSU1FMi0LDThITzSAdsNqlBFAnc0r2pYuFmpFnX06ksx9KzJlG0lLa1BIwCrHIobeRNHKhrEKoeM93TVqZg1HAPuBZYBXPg5nf5Yag8MvgbEPlvqlfZOecJzNnHdX/DcnaHDQh9/rIqW7efliV9VsJbE3rE3LU0NFiGDEkb/HDaXIhmBT3angORuZWc7MEOJf1QX020TsjcMqA7zmhRRwEk/0nNPJ/GJ0C4OsAwIDAQAB",
+    "messages": [
+        {
+            "canonicalization": "relaxed/relaxed",
+            "raw": "DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=example.test; s=msgpit; h=from:to:subject; bh=x6vvzm04RCyBOZLh1NktyG2bG2gcriSSITrce7caydU=; b=f0wUnQC9AB+LVjY6D9c9JmGyGM/iHuNyH/d8K/eDxFevmSHEmeMt3JiRzJCptT0h5W9QaTsI1EL8nIvrLEbUZzQjIeVuWBY7LTQf95x9vJ2rRmMZbu2sxjMNUrUl16aVFHYDOf78xq6x9ql4J2+ENS3reQTjxVkOMRiCPCuHDR1UjL197NHIr2T0vKcL5bpaflK+phTn9w6G8M08J3OYERmwnq8CH7YpRInn7uy7+UO/3WHeyYRj4NveVFNXvv7TTzHGcHCj8TUZi8mIdc3OLNxlMwIwRC6ZaFVUR0hgRIlj+l/W5WkRLyhR8fSoxGSjbdI8vjmDL4YEmebCd2CAkw==\r\nFrom: Bas <bas@example.test>\r\nTo: Raymond <raymond@example.test>\r\nSubject: Hallo\r\nReceived-SPF: pass; client-ip=8.8.8.8; helo=mail.example.test\r\n\r\nDit is de body.\r\n"
+        },
+        {
+            "canonicalization": "relaxed/simple",
+            "raw": "DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=example.test; s=msgpit; h=from:to:subject; bh=x6vvzm04RCyBOZLh1NktyG2bG2gcriSSITrce7caydU=; b=fPOPuQDdfpdMhGTE4zBDtrlIjQnR3R/aKkUT/4JywFHazDXMSHzxDbXDmfUBrNzchKTVZ8hkWhiyWrjLDpi83L9/+jWbRE8UGhiR0LyTKpGNED2IeTkxwt4+yqVrZx6NssVmggNgBbfw//ZAXgf10PIhFOlnrqiRvXd/N9Rhl25aqQrFm7L3Uil4u8PH4icvETKaWMRlLlKgvC3FbHNkM9CDML1Nty1Avc3fdHTdIwaiQvk99U2YBljzeFh/fe3DlocVnVErUI25hl7fsMDSRtFQF5gmrbfI5T4qENfunh+/qzfHhyeeRIecg0wODDrBmlJgxg+P+XB+RIuZX6Ouiw==\r\nFrom: Bas <bas@example.test>\r\nTo: Raymond <raymond@example.test>\r\nSubject: Hallo\r\nReceived-SPF: pass; client-ip=8.8.8.8; helo=mail.example.test\r\n\r\nDit is de body.\r\n"
+        },
+        {
+            "canonicalization": "simple/relaxed",
+            "raw": "DKIM-Signature: v=1; a=rsa-sha256; c=simple/relaxed; d=example.test; s=msgpit; h=from:to:subject; bh=x6vvzm04RCyBOZLh1NktyG2bG2gcriSSITrce7caydU=; b=EqRyCbqwBwPcMFAsb4km88e8lfrYu9vbQ6LdJkaNtXY46Qy+r6+EIjZUaPn1saDsknnFLbgjgSJ2laGDRc0SLLbdeGwADxZrRhWN1XEjZJ467AaxXBkaVm29stWxzYg/tjRwzzY7CQmblZK9xjRBLpmUlyb4kWEX0H/FF1p27TbjRQ8NfxGcOybuLeT1SE5ffyuo+VF8o2H6IKfZQXWh4ym2dDbkCnNEtnj/mxx+6MqqYHvZZffGkPjuScaVPe83k/PJo2gu7i9s/nIrCbjIShX1zlRDV2XarMyFqCQr5Vy2GT3M9IjGB9XNbwgqyxdCPy8sxFfCOdaHdgo5kutZjA==\r\nFrom: Bas <bas@example.test>\r\nTo: Raymond <raymond@example.test>\r\nSubject: Hallo\r\nReceived-SPF: pass; client-ip=8.8.8.8; helo=mail.example.test\r\n\r\nDit is de body.\r\n"
+        },
+        {
+            "canonicalization": "simple/simple",
+            "raw": "DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple; d=example.test; s=msgpit; h=from:to:subject; bh=x6vvzm04RCyBOZLh1NktyG2bG2gcriSSITrce7caydU=; b=NDi4ihjHoJbHdv7ybhOaRj/0svbJEDuNAA3P+Go4sOHAdLf51Srf7nXnJNW/+NzWyNr19sXTL0zr5DmjoV9mbG0ijl3UpMyK5FIstiWCi9ZziQfXaHFvKYwCBOP7QU+FbRAykzDBD3ou0khqpcjxpfTI91i6ZkRAS7SAZ/tuprBBrXZd6/Ws4cEIIRjJsiZn7lWP8TckbN7bV2jYXR4zTGdw9rPWTad8YryfoTbY4La52RRJGXLdAZUvODVnHQ/Xv9zcyew6NGxlfcDuTMc1yhcIbHWcEZWesOBc1/A2bNH1QR0UbGss4Ttj+VNRBKY+KVvtZ2IogICtaHZScJhgkg==\r\nFrom: Bas <bas@example.test>\r\nTo: Raymond <raymond@example.test>\r\nSubject: Hallo\r\nReceived-SPF: pass; client-ip=8.8.8.8; helo=mail.example.test\r\n\r\nDit is de body.\r\n"
+        }
+    ]
+}

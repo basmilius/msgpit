@@ -133,6 +133,15 @@ impl Scenario {
         Self::ServerError,
     ];
 
+    pub fn description(self) -> &'static str {
+        match self {
+            Self::InvalidNumber => "The recipient is rejected as malformed or unroutable.",
+            Self::Unauthorized => "Credentials are missing or rejected.",
+            Self::RateLimited => "Too many requests; the provider asks you to back off.",
+            Self::ServerError => "Something broke on the provider side.",
+        }
+    }
+
     pub fn recipient(self) -> &'static str {
         match self {
             Self::InvalidNumber => "+31600000001",

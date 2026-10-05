@@ -125,12 +125,7 @@ impl Network {
                 }
                 (values, ttl)
             }
-            Err(error)
-                if error.to_string().contains("NXDomain")
-                    || error.to_string().contains("no records") =>
-            {
-                (vec![], 60)
-            }
+            Err(error) if error.is_no_records_found() => (vec![], 60),
             Err(error) => return Err(error.into()),
         };
         let mut cache = self.cache.lock().unwrap();
