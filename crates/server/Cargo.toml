@@ -8,6 +8,7 @@ publish = false
 
 [dependencies]
 anyhow = "1"
+libc = "0.2"
 async-stream = "0.3"
 axum = "0.8"
 futures-core = "0.3"

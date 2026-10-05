@@ -28,6 +28,8 @@ curl http://localhost:18080/spryng/v2/messages \
 
 The inbox updates over SSE. Use the Import .eml button or drop a file onto the window.
 Captured HTML is sandboxed; remote images and scripts are blocked.
+SpamAssassin is included and scores SMTP mail and .eml imports automatically.
+No second service or rule download is needed at startup.
 
 SQLite lives in the `msgpit_data` volume, separate from the PHP database. Stop the
 container with `docker compose stop`; bring it back with `docker compose up -d --wait`.
@@ -44,8 +46,8 @@ To, Cc and Bcc recipients. Mail detail includes decoded headers, plain text, a s
 HTML preview, the original .eml download, formatted HTML and MIME source, attachments,
 caniemail compatibility, extracted links, SpamAssassin results and a deliverability report.
 Sender DNS checks cover SPF, DKIM, DMARC, forward-confirmed reverse DNS and 16 blocklists.
-Link probes and sender DNS run only when requested. SpamAssassin runs during capture
-when configured and reachable; a daemon failure does not lose the message.
+Link probes and sender DNS run only when requested. The bundled SpamAssassin uses local rules
+during capture. A scoring failure does not lose the message.
 
 The Command Center interface supports channel and recipient filters, read state,
 retention, resumable SSE, multi-file import, themes, browser notifications and built-in
@@ -93,7 +95,7 @@ inbox on `reset` when a cursor is outside the retained event window.
 | `MSGPIT_PROVIDERS` | `spryng` | Comma-separated enabled providers; empty disables provider HTTP routes |
 | `MSGPIT_SPRYNG_DLR_URL` | unset | Application webhook called when marking delivery status |
 | `MSGPIT_SPRYNG_DLR_HEADER` / `MSGPIT_SPRYNG_DLR_SECRET` | unset | Optional callback authentication; set both |
-| `MSGPIT_SPAMASSASSIN` | unset | spamd host:port, e.g. `spamassassin:783` |
+| `MSGPIT_SPAMASSASSIN` | `local` in Docker | Bundled filter; `off` disables it, or set an external spamd host:port |
 | `MSGPIT_DNS` | enabled | `off`, `0`, `false` or `no` disables sender DNS checks |
 | `MSGPIT_VERSION` | package version | Version reported by HTTP API |
 | `RUST_LOG` | `msgpit_server=info,tower_http=info` | Logging filter |
@@ -129,10 +131,13 @@ Verify the built image, including its bundled UI, with:
 ```sh
 docker compose up --build -d --wait
 python3 scripts/smoke.py
+python3 scripts/docker-runtime.py
 ```
 
 The smoke test creates tagged SMS, SMTP and import samples and leaves them in the
-inbox for inspection. It does not clear existing captures. Run browser coverage with
+inbox for inspection. It does not clear existing captures. The runtime test uses temporary
+containers to check offline startup, automatic scoring, health failures, crash recovery
+and graceful shutdown. Run browser coverage with
 `cd web && bunx playwright install chromium && bun run test:browser` after starting Docker.
 
 CI runs Rust checks, source-renderer tests, container smoke tests and Playwright against

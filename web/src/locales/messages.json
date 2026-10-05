@@ -109,7 +109,7 @@
     "failed": "No answer"
   },
   "spam": {
-    "off": "No SpamAssassin is configured. Set MSGPIT_SPAMASSASSIN to the daemon host and port; every new mail then gets a score.",
+    "off": "Spam scoring is disabled. Set MSGPIT_SPAMASSASSIN=local to use the filter bundled in the Docker image.",
     "none": "This mail was not scored. The daemon may have been down when it arrived.",
     "score": "{{score}} of {{threshold}}",
     "spam": "Counts as spam",
@@ -211,7 +211,7 @@
     "httpPort": "HTTP port",
     "httpPortDescription": "The provider APIs and the test API listen here.",
     "spamd": "SpamAssassin",
-    "spamdDescription": "host:port of a spamd. Every new mail gets a score when it is set.",
+    "spamdDescription": "The Docker image scores new mail automatically. Use local, off, or an external spamd host:port.",
     "notify": "Notify on new messages",
     "notifyDescription": "A desktop notification when the app is in the background, and a toast when it is not. A burst counts as one.",
     "status": "Status",

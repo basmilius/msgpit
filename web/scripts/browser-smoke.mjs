@@ -99,7 +99,7 @@ try {
     await page.getByText("200", { exact: true }).waitFor();
     await page.getByRole("tab", { name: "Spam", exact: true }).click();
     await page
-        .getByText(/SpamAssassin/)
+        .getByText(/Counts as (spam|clean)/)
         .last()
         .waitFor();
     await page.getByRole("tab", { name: "Deliverability", exact: true }).click();
@@ -173,6 +173,22 @@ try {
         .getByRole("button")
         .filter({ hasText: `${tag}-a` })
         .waitFor();
+    const spamSubject = `${tag}-gtube`;
+    const gtube = `From: sender@example.org\r\nTo: recipient@example.org\r\nSubject: ${spamSubject}\r\nMIME-Version: 1.0\r\nContent-Type: text/plain\r\n\r\nXJS*C4JDBQADN1.NSBN3*2IDNEN*GTUBE-STANDARD-ANTI-UBE-TEST-EMAIL*C.34X\r\n`;
+    assert.equal(
+        (
+            await context.request.post(`${base}/api/messages/import`, {
+                headers: { "Content-Type": "message/rfc822" },
+                data: gtube,
+            })
+        ).status(),
+        201,
+    );
+    await list.getByRole("button").filter({ hasText: spamSubject }).click();
+    await page.getByRole("tab", { name: "Spam", exact: true }).click();
+    await page.getByText("Counts as spam", { exact: true }).waitFor();
+    await page.getByText("GTUBE", { exact: true }).waitFor();
+
     await page.getByRole("button", { name: "Settings", exact: true }).click();
     await page.getByRole("radio", { name: "Dark", exact: true }).click();
     await page.waitForFunction(() => document.documentElement.dataset.theme === "dark");
@@ -200,7 +216,7 @@ try {
     await list.waitFor({ state: "visible" });
     assert.deepEqual(errors, []);
     console.log(
-        `PASS: Command Center layout, safe preview, all mail tabs, DLR, docs, multi-import, filters, themes, mobile and cancel-clear (${tag})`,
+        `PASS: Command Center layout, safe preview, all mail tabs, real GTUBE spam rules, DLR, docs, multi-import, filters, themes, mobile and cancel-clear (${tag})`,
     );
 } finally {
     await browser.close();

@@ -58,7 +58,7 @@ and `MAIL_PORT=1025`. Disable TLS and authentication.
 | `MSGPIT_SMTP_HOSTNAME` | `msgpit` | SMTP greeting hostname |
 | `MSGPIT_SPRYNG_DLR_URL` | unset | Application delivery webhook |
 | `MSGPIT_SPRYNG_DLR_HEADER` / `MSGPIT_SPRYNG_DLR_SECRET` | unset | Optional callback authentication; set both |
-| `MSGPIT_SPAMASSASSIN` | unset | spamd host:port |
+| `MSGPIT_SPAMASSASSIN` | `local` in Docker | Bundled filter; `off` disables it, or set an external spamd host:port |
 | `MSGPIT_DNS` | enabled | `off`, `0`, `false` or `no` disables sender DNS |
 | `MSGPIT_VERSION` | package version | Reported version |
 

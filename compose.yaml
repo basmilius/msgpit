@@ -15,14 +15,13 @@ services:
       MSGPIT_SMTP: "${MSGPIT_SMTP:-1}"
       MSGPIT_PROVIDERS: "${MSGPIT_PROVIDERS-spryng}"
       MSGPIT_DNS: "${MSGPIT_DNS:-on}"
-      MSGPIT_SPAMASSASSIN: "${MSGPIT_SPAMASSASSIN:-}"
+      MSGPIT_SPAMASSASSIN: "${MSGPIT_SPAMASSASSIN:-local}"
       MSGPIT_SPRYNG_DLR_URL: "${MSGPIT_SPRYNG_DLR_URL:-}"
       MSGPIT_SPRYNG_DLR_HEADER: "${MSGPIT_SPRYNG_DLR_HEADER:-}"
       MSGPIT_SPRYNG_DLR_SECRET: "${MSGPIT_SPRYNG_DLR_SECRET:-}"
       MSGPIT_MAX_MESSAGES: "${MSGPIT_MAX_MESSAGES:-1000}"
     volumes:
       - msgpit_data:/data
-    init: true
     restart: unless-stopped
 
 volumes:

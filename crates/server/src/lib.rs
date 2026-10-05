@@ -9,6 +9,7 @@ pub mod store;
 pub mod html;
 pub mod network;
 pub mod spam;
+pub mod spam_daemon;
 
 pub mod authentication;
 pub mod docs;

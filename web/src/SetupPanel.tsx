@@ -127,12 +127,15 @@ export function SetupPanel({ scenario, refresh }: { scenario: string; refresh():
                             wrap
                         >{`MSGPIT_SPRYNG_DLR_URL=http://web/sms-status.php\nMSGPIT_SPRYNG_DLR_HEADER=X-Webhook-Token\nMSGPIT_SPRYNG_DLR_SECRET=development-secret`}</CodeBlock>
                     </SettingsRow>
-                    <SettingsRow label="SpamAssassin and sender DNS">
+                    <SettingsRow
+                        label="SpamAssassin and sender DNS"
+                        description="SpamAssassin is bundled and scores new mail automatically using local rules. Sender DNS runs when you request it."
+                    >
                         <CodeBlock
                             label="Mail analysis"
                             copyLabel={t("setup.copy")}
                             className="mt-2"
-                        >{`MSGPIT_SPAMASSASSIN=spamassassin:783\nMSGPIT_DNS=on`}</CodeBlock>
+                        >{`MSGPIT_SPAMASSASSIN=local\nMSGPIT_DNS=on`}</CodeBlock>
                     </SettingsRow>
                 </SettingsSection>
                 <SettingsSection

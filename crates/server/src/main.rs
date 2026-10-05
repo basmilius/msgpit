@@ -2,7 +2,8 @@ use anyhow::{Context, Result};
 use msgpit_server::{
     api::{self, AppState},
     providers::{CallbackConfig, Provider, spryng::Spryng},
-    smtp,
+    smtp, spam,
+    spam_daemon::Daemon,
     store::Store,
 };
 use std::{
@@ -14,6 +15,7 @@ use std::{
 use tokio::{
     io::{AsyncBufReadExt, AsyncWriteExt, BufReader},
     net::{TcpListener, TcpStream},
+    task::JoinSet,
 };
 use tokio_util::sync::CancellationToken;
 
@@ -45,6 +47,9 @@ async fn healthcheck(http: SocketAddr, smtp: Option<SocketAddr>) -> Result<()> {
                 .read_line(&mut greeting)
                 .await?;
             anyhow::ensure!(greeting.starts_with("220 "), "SMTP healthcheck failed");
+        }
+        if spam::Config::from_env() == spam::Config::Local {
+            spam::ping(spam::LOCAL_ENDPOINT).await?;
         }
         Ok(())
     })
@@ -106,15 +111,6 @@ async fn main() -> Result<()> {
         .transpose()?
         .unwrap_or(0);
     let shutdown = CancellationToken::new();
-    let state = AppState {
-        store: store.clone(),
-        network: msgpit_server::network::Network::from_env()?,
-        providers: Arc::new(providers),
-        smtp_port,
-        shutdown: shutdown.clone(),
-    };
-    let app = api::router(state, &setting("MSGPIT_WEB_DIR", "web/dist"));
-    tracing::info!(http = %http_listener.local_addr()?, smtp_port, "Msgpit ready");
     let signal_shutdown = shutdown.clone();
     tokio::spawn(async move {
         #[cfg(unix)]
@@ -128,24 +124,51 @@ async fn main() -> Result<()> {
         let _ = tokio::signal::ctrl_c().await;
         signal_shutdown.cancel();
     });
+    let network = msgpit_server::network::Network::from_env()?;
+    let spamd = network.spamd.clone();
+    let daemon = if spam::Config::from_env() == spam::Config::Local {
+        Some(Daemon::start(&shutdown).await?)
+    } else {
+        None
+    };
+    let state = AppState {
+        store: store.clone(),
+        network,
+        providers: Arc::new(providers),
+        smtp_port,
+        shutdown: shutdown.clone(),
+    };
+    let app = api::router(state, &setting("MSGPIT_WEB_DIR", "web/dist"));
+    tracing::info!(http = %http_listener.local_addr()?, smtp_port, "Msgpit ready");
+    let mut services = JoinSet::new();
     let http_shutdown = shutdown.clone();
-    let mut http_task = tokio::spawn(async move {
+    services.spawn(async move {
         axum::serve(http_listener, app)
             .with_graceful_shutdown(http_shutdown.cancelled_owned())
             .await
+            .map_err(anyhow::Error::from)
     });
     let smtp_shutdown = shutdown.clone();
-    let mut smtp_task = tokio::spawn(async move {
+    services.spawn(async move {
         if let Some(listener) = smtp_listener {
-            smtp::serve(listener, store, smtp_shutdown).await
+            smtp::serve(listener, store, spamd, smtp_shutdown).await
         } else {
             smtp_shutdown.cancelled().await;
             Ok(())
         }
     });
-    tokio::select! {
-        result = &mut http_task => { shutdown.cancel(); result??; smtp_task.await??; }
-        result = &mut smtp_task => { shutdown.cancel(); result??; http_task.await??; }
+    if let Some(daemon) = daemon {
+        services.spawn(daemon.run(shutdown.clone()));
     }
-    Ok(())
+    let mut failure = None;
+    while let Some(result) = services.join_next().await {
+        shutdown.cancel();
+        if let Err(error) = result
+            .context("Service task failed")
+            .and_then(|result| result)
+        {
+            failure.get_or_insert(error);
+        }
+    }
+    failure.map_or(Ok(()), Err)
 }

@@ -20,20 +20,22 @@ FROM debian:bookworm-slim
 ARG VERSION=0.1.0
 ARG REVISION=unknown
 LABEL org.opencontainers.image.title="Msgpit" org.opencontainers.image.version=$VERSION org.opencontainers.image.revision=$REVISION
-RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates spamd tini && rm -rf /var/lib/apt/lists/*
 RUN groupadd --gid 10001 msgpit \
     && useradd --uid 10001 --gid msgpit --no-create-home msgpit \
     && mkdir -p /data /app/web \
     && chown msgpit:msgpit /data
+COPY docker/spamassassin.cf /etc/spamassassin/99-msgpit.cf
 COPY --from=server /tmp/msgpit-server /usr/local/bin/msgpit
 COPY --from=web /web/dist/ /app/web/
 ENV MSGPIT_VERSION=$VERSION \
     MSGPIT_DB=/data/msgpit-rust.sqlite \
     MSGPIT_WEB_DIR=/app/web \
-    MSGPIT_HTTP_ADDR=0.0.0.0:8080
+    MSGPIT_HTTP_ADDR=0.0.0.0:8080 \
+    MSGPIT_SPAMASSASSIN=local
 USER msgpit
 WORKDIR /app
 EXPOSE 8080 1025
 VOLUME /data
 HEALTHCHECK --interval=10s --timeout=4s --start-period=10s --retries=3 CMD ["msgpit", "healthcheck"]
-ENTRYPOINT ["msgpit"]
+ENTRYPOINT ["/usr/bin/tini", "--", "msgpit"]

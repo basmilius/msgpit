@@ -52,9 +52,9 @@ impl Network {
         );
         Self::new(
             enabled,
-            std::env::var("MSGPIT_SPAMASSASSIN")
-                .ok()
-                .filter(|s| !s.is_empty()),
+            crate::spam::Config::from_env()
+                .endpoint()
+                .map(str::to_owned),
         )
     }
 

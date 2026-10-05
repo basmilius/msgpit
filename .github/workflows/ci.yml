@@ -27,6 +27,7 @@ jobs:
         working-directory: web
       - run: docker compose up --build -d --wait
       - run: python3 scripts/smoke.py
+      - run: python3 scripts/docker-runtime.py
       - run: bun run test:browser
         working-directory: web
       - if: failure()

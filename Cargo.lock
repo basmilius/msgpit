@@ -1444,6 +1444,7 @@ dependencies = [
  "futures-core",
  "hickory-resolver",
  "http-body-util",
+ "libc",
  "mail-auth",
  "mail-parser",
  "percent-encoding",

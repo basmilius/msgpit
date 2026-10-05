@@ -129,17 +129,21 @@ are not stored, because they say something about the world right now and not abo
 
 ## Spam scoring
 
-Point msgpit at a SpamAssassin daemon and every captured mail gets a score, with the rules that
-produced it:
+The Docker image includes SpamAssassin and its rules. Every SMTP capture and .eml
+import gets a score automatically. No extra service is needed. The bundled daemon
+listens only on loopback and uses local content rules, so capture does not depend
+on public DNS, blocklists or rule downloads. Bayesian learning is disabled because
+development captures are not a useful training corpus.
 
-```yaml
-    environment:
-      - MSGPIT_SPAMASSASSIN=spamassassin:783
+`MSGPIT_SPAMASSASSIN=local` is the image default. Set it to `off` to disable scoring,
+or to an external spamd host and port (for example `spamassassin:783`) to use your
+own filter. External daemons should be available on the application network.
+When running the Rust binary directly, scoring defaults to disabled; `local`
+requires the `spamd` executable on PATH.
 
-  spamassassin:
-    hostname: spamassassin
-    image: instantlinux/spamassassin:latest
-```
+Msgpit starts after the bundled filter is ready and stops if its process exits.
+Scoring timeouts do not reject mail; the message is captured without a spam report.
+Existing messages keep the score recorded when they arrived.
 
 The **Spam** tab then shows the score against the threshold and a table of what the filter reacted
 to. That table is the useful part: a bare 6.2 tells you something is wrong, while
@@ -212,7 +216,7 @@ Files up to 30 MB are accepted.
 ## What is not there
 
 msgpit accepts a message and stores it. It never delivers, never bounces, and never answers a
-delivery status notification. SpamAssassin scoring is optional; set `MSGPIT_SPAMASSASSIN` to a reachable spamd host and port.
+delivery status notification. The Docker image scores mail automatically with its bundled SpamAssassin filter.
 
 Every recipient of one mail becomes its own message sharing a `batchId`, and the **envelope**
 decides who those recipients are, not the `To` header. That is how delivery actually works, and it

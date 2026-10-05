@@ -9,7 +9,12 @@ use tokio::{
 };
 use tokio_util::sync::CancellationToken;
 
-pub async fn serve(listener: TcpListener, store: Store, shutdown: CancellationToken) -> Result<()> {
+pub async fn serve(
+    listener: TcpListener,
+    store: Store,
+    spamd: Option<String>,
+    shutdown: CancellationToken,
+) -> Result<()> {
     let permits = Arc::new(Semaphore::new(128));
     let mut sessions = JoinSet::new();
     loop {
@@ -22,12 +27,13 @@ pub async fn serve(listener: TcpListener, store: Store, shutdown: CancellationTo
                 let (socket, _) = accepted?;
                 let Ok(permit) = permits.clone().try_acquire_owned() else { drop(socket); continue; };
                 let store = store.clone();
+                let spamd = spamd.clone();
                 let shutdown = shutdown.clone();
                 sessions.spawn(async move {
                     let _permit = permit;
                     tokio::select! {
                         _ = shutdown.cancelled() => {}
-                        result = session(socket, store) => {
+                        result = session(socket, store, spamd.as_deref()) => {
                             if let Err(error) = result { tracing::debug!(%error, "SMTP session ended"); }
                         }
                     }
@@ -72,7 +78,7 @@ fn address<'a>(argument: &'a str, prefix: &str) -> Option<&'a str> {
     Some(address)
 }
 
-async fn session(socket: TcpStream, store: Store) -> Result<()> {
+async fn session(socket: TcpStream, store: Store, spamd: Option<&str>) -> Result<()> {
     let mut reader = BufReader::new(socket);
     let hostname = std::env::var("MSGPIT_SMTP_HOSTNAME")
         .ok()
@@ -151,12 +157,7 @@ async fn session(socket: TcpStream, store: Store) -> Result<()> {
                         None,
                     ) {
                         Ok(mut captures) => {
-                            mail::score(
-                                &mut captures,
-                                std::env::var("MSGPIT_SPAMASSASSIN").ok().as_deref(),
-                                &raw,
-                            )
-                            .await;
+                            mail::score(&mut captures, spamd, &raw).await;
                             match store.capture(captures).await {
                                 Ok(()) => reply(&mut reader, "250 Message captured\r\n").await?,
                                 Err(error) => {
