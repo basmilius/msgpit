@@ -113,6 +113,29 @@ export function SetupPanel({ scenario, refresh }: { scenario: string; refresh():
                     </SettingsRow>
                 </SettingsSection>
                 <SettingsSection
+                    title="Optional services"
+                    description="Set these variables in the container environment and recreate the service."
+                >
+                    <SettingsRow
+                        label="Delivery webhook"
+                        description="Calls from inside this container. Use the app service name, or host.docker.internal to reach your Mac."
+                    >
+                        <CodeBlock
+                            label="Delivery webhook"
+                            copyLabel={t("setup.copy")}
+                            className="mt-2"
+                            wrap
+                        >{`MSGPIT_SPRYNG_DLR_URL=http://web/sms-status.php\nMSGPIT_SPRYNG_DLR_HEADER=X-Webhook-Token\nMSGPIT_SPRYNG_DLR_SECRET=development-secret`}</CodeBlock>
+                    </SettingsRow>
+                    <SettingsRow label="SpamAssassin and sender DNS">
+                        <CodeBlock
+                            label="Mail analysis"
+                            copyLabel={t("setup.copy")}
+                            className="mt-2"
+                        >{`MSGPIT_SPAMASSASSIN=spamassassin:783\nMSGPIT_DNS=on`}</CodeBlock>
+                    </SettingsRow>
+                </SettingsSection>
+                <SettingsSection
                     title={t("scenario.title")}
                     description={t("scenario.description")}
                     footer={t("setup.magicHint")}

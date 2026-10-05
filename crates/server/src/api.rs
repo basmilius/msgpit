@@ -78,7 +78,7 @@ pub fn router(state: AppState, web_dir: &str) -> Router {
 async fn health(State(state): State<AppState>) -> Result<Json<Value>, ApiError> {
     state.store.events_since(i64::MAX).await?;
     Ok(Json(
-        json!({"status":"ok", "version":env!("CARGO_PKG_VERSION"), "smtp":{"port":state.smtp_port}}),
+        json!({"status":"ok", "version":std::env::var("MSGPIT_VERSION").unwrap_or_else(|_|env!("CARGO_PKG_VERSION").into()), "smtp":if state.smtp_port == 0 {Value::Null} else {json!({"host":"msgpit","port":state.smtp_port})}}),
     ))
 }
 
@@ -102,15 +102,44 @@ async fn clear(State(state): State<AppState>) -> Result<StatusCode, ApiError> {
     state.store.clear().await?;
     Ok(StatusCode::NO_CONTENT)
 }
+async fn mail_source(state: &AppState, detail: &Detail) -> Result<Vec<u8>, ApiError> {
+    if let Some(source) = detail.parts.iter().find(|p| p.disposition == "source") {
+        return state
+            .store
+            .part(detail.message.id.clone(), source.id.clone())
+            .await?
+            .ok_or_else(missing);
+    }
+    Ok(detail.raw_request.as_bytes().to_vec())
+}
+
 async fn detail(
     State(state): State<AppState>,
     Path(id): Path<String>,
 ) -> Result<Json<Value>, ApiError> {
     let mut detail = state.store.detail(id).await?.ok_or_else(missing)?;
     if detail.message.channel == "email" {
-        mail::enrich(&mut detail);
+        let raw = mail_source(&state, &detail).await?;
+        mail::enrich_bytes(&mut detail, &raw);
     }
-    Ok(Json(crate::report::detail_json(&detail)))
+    let mut result = crate::report::detail_json(&detail);
+    result["dnsEnabled"] = json!(state.network.auth.is_some());
+    result["spamConfigured"] = json!(state.network.spamd.is_some());
+    result["spam"] = detail
+        .message
+        .meta
+        .get("spam")
+        .cloned()
+        .unwrap_or(Value::Null);
+    let provider = state
+        .providers
+        .iter()
+        .find(|p| p.id() == detail.message.provider);
+    result["deliveryReportsSupported"] =
+        json!(provider.is_some_and(|p| p.supports_delivery_reports()));
+    result["callbackConfigured"] =
+        json!(provider.is_some_and(|p| p.callback(&detail.message, "delivered").is_some()));
+    Ok(Json(result))
 }
 async fn read(
     State(state): State<AppState>,
@@ -177,6 +206,9 @@ async fn part(
         "image/jpeg",
         "image/gif",
         "image/webp",
+        "image/avif",
+        "application/pdf",
+        "message/rfc822",
         "text/plain",
     ]
     .contains(&summary.content_type.as_str())
@@ -195,6 +227,10 @@ async fn part(
     response
         .headers_mut()
         .insert("cache-control", "no-store".parse().unwrap());
+    response.headers_mut().insert(
+        "content-security-policy",
+        "sandbox; default-src 'none'".parse().unwrap(),
+    );
     if let Some(filename) = &summary.filename {
         let encoded =
             percent_encoding::utf8_percent_encode(filename, percent_encoding::NON_ALPHANUMERIC);
@@ -212,7 +248,8 @@ async fn check_links(
     Path(id): Path<String>,
 ) -> Result<Json<Value>, ApiError> {
     let mut detail = state.store.detail(id).await?.ok_or_else(missing)?;
-    mail::enrich(&mut detail);
+    let raw = mail_source(&state, &detail).await?;
+    mail::enrich_bytes(&mut detail, &raw);
     let links = crate::html::links(detail.html.as_deref(), detail.text.as_deref());
     Ok(Json(
         json!({"links":state.network.check_links(&links).await}),
@@ -233,8 +270,11 @@ async fn authentication(
             "DNS lookups are switched off with MSGPIT_DNS.".into(),
         ));
     }
-    mail::enrich(&mut detail);
-    let (report, lookups) = crate::authentication::check(&detail, &state.network).await;
+    let raw = mail_source(&state, &detail).await?;
+    mail::enrich_bytes(&mut detail, &raw);
+    let raw = mail_source(&state, &detail).await?;
+    let (report, lookups) =
+        crate::authentication::check_with_raw(&detail, &state.network, &raw).await;
     Ok(Json(json!({"report":report,"lookups":lookups})))
 }
 
@@ -285,7 +325,7 @@ async fn dlr(
 async fn providers(State(state): State<AppState>) -> Json<Value> {
     Json(
         json!({"providers":state.providers.iter().map(|p| json!({"id":p.id(),"channels":p.channels(),"deliveryReports":p.supports_delivery_reports(),"errorScenarios":true,"basePath":format!("/{}",p.id()),"baseUrl":format!("http://msgpit:8080/{}",p.id())})).collect::<Vec<_>>(),
-        "smtp":{"port":state.smtp_port}, "version":env!("CARGO_PKG_VERSION")}),
+        "smtp":if state.smtp_port == 0 {Value::Null} else {json!({"host":"msgpit","port":state.smtp_port})}, "version":std::env::var("MSGPIT_VERSION").unwrap_or_else(|_|env!("CARGO_PKG_VERSION").into())}),
     )
 }
 async fn scenarios() -> Json<Value> {

@@ -52,3 +52,133 @@
     display: none;
   }
 }
+
+.docs-content {
+  font-size: 0.875rem;
+  line-height: 1.65;
+  color: var(--color-text-muted);
+}
+.docs-content > * {
+  max-width: 54rem;
+}
+.docs-content h1,
+.docs-content h2,
+.docs-content h3 {
+  color: var(--color-text);
+  font-weight: 600;
+  margin: 1.5rem 0 0.75rem;
+}
+.docs-content h1 {
+  font-size: 1.25rem;
+  margin-top: 0;
+}
+.docs-content h2 {
+  font-size: 1rem;
+}
+.docs-content p,
+.docs-content ul,
+.docs-content ol,
+.docs-content pre,
+.docs-content table {
+  margin-bottom: 1rem;
+}
+.docs-content ul,
+.docs-content ol {
+  padding-left: 1.25rem;
+}
+.docs-content ul {
+  list-style: disc;
+}
+.docs-content ol {
+  list-style: decimal;
+}
+.docs-content pre {
+  padding: 1rem;
+  overflow-x: auto;
+  border: 1px solid var(--color-border);
+  border-radius: 0.5rem;
+  background: var(--color-surface);
+  font-size: 0.75rem;
+}
+.docs-content code {
+  font-size: 0.8em;
+  color: var(--color-text);
+}
+.docs-content a,
+.docs-content button {
+  color: var(--color-text);
+  text-decoration: underline;
+}
+.docs-content th,
+.docs-content td {
+  border-bottom: 1px solid var(--color-border);
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+}
+
+.code .tok-tag,
+.raw-name {
+  color: var(--color-text);
+}
+.code .tok-attr {
+  color: var(--color-status-needs-you);
+}
+.code .tok-value {
+  color: var(--color-status-idle);
+}
+.code .tok-comment,
+.code .tok-doctype,
+.raw-folded,
+.blob-size {
+  color: var(--color-text-faint);
+}
+.raw-line,
+.raw-value,
+.raw-name {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.raw-headers {
+  display: grid;
+  grid-template-columns: minmax(0, max-content) minmax(0, 1fr);
+  column-gap: 10px;
+}
+.raw-name {
+  max-width: 32ch;
+}
+.raw-folded {
+  grid-column: 2;
+}
+.raw-blank {
+  height: 8px;
+}
+.raw-boundary {
+  margin: 10px 0 6px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: var(--color-surface-sunken);
+  font-weight: 600;
+  display: inline-block;
+}
+.blob summary {
+  cursor: pointer;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 3px 6px;
+  border-radius: 4px;
+  background: var(--color-surface-hover);
+}
+.blob-preview {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.blob-size {
+  margin-left: auto;
+  white-space: nowrap;
+}
+.blob pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}

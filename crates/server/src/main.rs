@@ -28,7 +28,7 @@ fn loopback(mut addr: SocketAddr) -> SocketAddr {
     addr
 }
 
-async fn healthcheck(http: SocketAddr, smtp: SocketAddr) -> Result<()> {
+async fn healthcheck(http: SocketAddr, smtp: Option<SocketAddr>) -> Result<()> {
     tokio::time::timeout(Duration::from_secs(3), async {
         let mut http = TcpStream::connect(loopback(http)).await?;
         http.write_all(b"GET /healthz HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n")
@@ -39,11 +39,13 @@ async fn healthcheck(http: SocketAddr, smtp: SocketAddr) -> Result<()> {
             status.starts_with("HTTP/1.1 200"),
             "HTTP healthcheck failed"
         );
-        let mut greeting = String::new();
-        BufReader::new(TcpStream::connect(loopback(smtp)).await?)
-            .read_line(&mut greeting)
-            .await?;
-        anyhow::ensure!(greeting.starts_with("220 "), "SMTP healthcheck failed");
+        if let Some(smtp) = smtp {
+            let mut greeting = String::new();
+            BufReader::new(TcpStream::connect(loopback(smtp)).await?)
+                .read_line(&mut greeting)
+                .await?;
+            anyhow::ensure!(greeting.starts_with("220 "), "SMTP healthcheck failed");
+        }
         Ok(())
     })
     .await
@@ -53,9 +55,11 @@ async fn healthcheck(http: SocketAddr, smtp: SocketAddr) -> Result<()> {
 #[tokio::main]
 async fn main() -> Result<()> {
     let http: SocketAddr = setting("MSGPIT_HTTP_ADDR", "0.0.0.0:8080").parse()?;
-    let smtp_addr: SocketAddr = setting("MSGPIT_SMTP_ADDR", "0.0.0.0:1025").parse()?;
+    let smtp_enabled = setting("MSGPIT_SMTP", "1") != "0";
+    let smtp_default = format!("0.0.0.0:{}", setting("MSGPIT_SMTP_PORT", "1025"));
+    let smtp_addr: SocketAddr = setting("MSGPIT_SMTP_ADDR", &smtp_default).parse()?;
     if env::args().nth(1).as_deref() == Some("healthcheck") {
-        return healthcheck(http, smtp_addr).await;
+        return healthcheck(http, smtp_enabled.then_some(smtp_addr)).await;
     }
     tracing_subscriber::fmt()
         .with_env_filter(setting("RUST_LOG", "msgpit_server=info,tower_http=info"))
@@ -87,19 +91,30 @@ async fn main() -> Result<()> {
     let http_listener = TcpListener::bind(http)
         .await
         .context("Could not bind HTTP")?;
-    let smtp_listener = TcpListener::bind(smtp_addr)
-        .await
-        .context("Could not bind SMTP")?;
+    let smtp_listener = if smtp_enabled {
+        Some(
+            TcpListener::bind(smtp_addr)
+                .await
+                .context("Could not bind SMTP")?,
+        )
+    } else {
+        None
+    };
+    let smtp_port = smtp_listener
+        .as_ref()
+        .map(|listener| listener.local_addr().map(|addr| addr.port()))
+        .transpose()?
+        .unwrap_or(0);
     let shutdown = CancellationToken::new();
     let state = AppState {
         store: store.clone(),
         network: msgpit_server::network::Network::from_env()?,
         providers: Arc::new(providers),
-        smtp_port: smtp_listener.local_addr()?.port(),
+        smtp_port,
         shutdown: shutdown.clone(),
     };
     let app = api::router(state, &setting("MSGPIT_WEB_DIR", "web/dist"));
-    tracing::info!(http = %http_listener.local_addr()?, smtp = %smtp_listener.local_addr()?, "Msgpit ready");
+    tracing::info!(http = %http_listener.local_addr()?, smtp_port, "Msgpit ready");
     let signal_shutdown = shutdown.clone();
     tokio::spawn(async move {
         #[cfg(unix)]
@@ -119,7 +134,15 @@ async fn main() -> Result<()> {
             .with_graceful_shutdown(http_shutdown.cancelled_owned())
             .await
     });
-    let mut smtp_task = tokio::spawn(smtp::serve(smtp_listener, store, shutdown.clone()));
+    let smtp_shutdown = shutdown.clone();
+    let mut smtp_task = tokio::spawn(async move {
+        if let Some(listener) = smtp_listener {
+            smtp::serve(listener, store, smtp_shutdown).await
+        } else {
+            smtp_shutdown.cancelled().await;
+            Ok(())
+        }
+    });
     tokio::select! {
         result = &mut http_task => { shutdown.cancel(); result??; smtp_task.await??; }
         result = &mut smtp_task => { shutdown.cancel(); result??; http_task.await??; }

@@ -1,0 +1,173 @@
+[
+    {
+        "html": "<table align=\"center\"><tr><td style=\"margin:0;color:red\">Hoi</td></tr></table>",
+        "expected": {
+            "supported": 86.67,
+            "partial": 6.67,
+            "unsupported": 6.67,
+            "tested": 15,
+            "features": 4,
+            "dataUpdated": "2026-01-01 00:00:00 +0000",
+            "warnings": [
+                {
+                    "slug": "html-align",
+                    "title": "align attribute",
+                    "category": "html",
+                    "occurrences": 1,
+                    "supported": 2,
+                    "partial": 0,
+                    "unsupported": 1,
+                    "tested": 3
+                },
+                {
+                    "slug": "css-margin",
+                    "title": "margin",
+                    "category": "css",
+                    "occurrences": 1,
+                    "supported": 3,
+                    "partial": 1,
+                    "unsupported": 0,
+                    "tested": 4
+                }
+            ]
+        }
+    },
+    {
+        "html": "<html><head><style>.a { gap: 8px; }</style></head><body>Hoi</body></html>",
+        "expected": {
+            "supported": 37.5,
+            "partial": 25.0,
+            "unsupported": 37.5,
+            "tested": 8,
+            "features": 2,
+            "dataUpdated": "2026-01-01 00:00:00 +0000",
+            "warnings": [
+                {
+                    "slug": "css-gap",
+                    "title": "gap",
+                    "category": "css",
+                    "occurrences": 1,
+                    "supported": 1,
+                    "partial": 1,
+                    "unsupported": 2,
+                    "tested": 4
+                },
+                {
+                    "slug": "html-style",
+                    "title": "<style> element",
+                    "category": "html",
+                    "occurrences": 1,
+                    "supported": 2,
+                    "partial": 1,
+                    "unsupported": 1,
+                    "tested": 4
+                }
+            ]
+        }
+    },
+    {
+        "html": "<style>/* color: red; */ .a { margin: 0 }</style>",
+        "expected": {
+            "supported": 62.5,
+            "partial": 25.0,
+            "unsupported": 12.5,
+            "tested": 8,
+            "features": 2,
+            "dataUpdated": "2026-01-01 00:00:00 +0000",
+            "warnings": [
+                {
+                    "slug": "html-style",
+                    "title": "<style> element",
+                    "category": "html",
+                    "occurrences": 1,
+                    "supported": 2,
+                    "partial": 1,
+                    "unsupported": 1,
+                    "tested": 4
+                },
+                {
+                    "slug": "css-margin",
+                    "title": "margin",
+                    "category": "css",
+                    "occurrences": 1,
+                    "supported": 3,
+                    "partial": 1,
+                    "unsupported": 0,
+                    "tested": 4
+                }
+            ]
+        }
+    },
+    {
+        "html": "<p style=\"margin:0\">a</p><p style=\"margin:4px\">b</p><p style=\"margin:8px\">c</p>",
+        "expected": {
+            "supported": 75.0,
+            "partial": 25.0,
+            "unsupported": 0.0,
+            "tested": 4,
+            "features": 1,
+            "dataUpdated": "2026-01-01 00:00:00 +0000",
+            "warnings": [
+                {
+                    "slug": "css-margin",
+                    "title": "margin",
+                    "category": "css",
+                    "occurrences": 3,
+                    "supported": 3,
+                    "partial": 1,
+                    "unsupported": 0,
+                    "tested": 4
+                }
+            ]
+        }
+    },
+    {
+        "html": "<div style=\"color:red;margin:0;gap:8px\">Hoi</div>",
+        "expected": {
+            "supported": 66.67,
+            "partial": 16.67,
+            "unsupported": 16.67,
+            "tested": 12,
+            "features": 3,
+            "dataUpdated": "2026-01-01 00:00:00 +0000",
+            "warnings": [
+                {
+                    "slug": "css-gap",
+                    "title": "gap",
+                    "category": "css",
+                    "occurrences": 1,
+                    "supported": 1,
+                    "partial": 1,
+                    "unsupported": 2,
+                    "tested": 4
+                },
+                {
+                    "slug": "css-margin",
+                    "title": "margin",
+                    "category": "css",
+                    "occurrences": 1,
+                    "supported": 3,
+                    "partial": 1,
+                    "unsupported": 0,
+                    "tested": 4
+                }
+            ]
+        }
+    },
+    {
+        "html": "<p style=\"filter:blur(2px);color:red\">Hoi</p>",
+        "expected": {
+            "supported": 100.0,
+            "partial": 0.0,
+            "unsupported": 0.0,
+            "tested": 4,
+            "features": 1,
+            "dataUpdated": "2026-01-01 00:00:00 +0000",
+            "warnings": []
+        }
+    },
+    {
+        "html": "<p>Hoi</p>",
+        "expected": null
+    }
+]

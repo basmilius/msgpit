@@ -74,7 +74,15 @@ fn address<'a>(argument: &'a str, prefix: &str) -> Option<&'a str> {
 
 async fn session(socket: TcpStream, store: Store) -> Result<()> {
     let mut reader = BufReader::new(socket);
-    reply(&mut reader, "220 msgpit ESMTP ready\r\n").await?;
+    let hostname = std::env::var("MSGPIT_SMTP_HOSTNAME")
+        .ok()
+        .filter(|s| {
+            !s.is_empty()
+                && s.chars()
+                    .all(|c| c.is_ascii_alphanumeric() || matches!(c, '.' | '-'))
+        })
+        .unwrap_or_else(|| "msgpit".into());
+    reply(&mut reader, &format!("220 {hostname} ESMTP ready\r\n")).await?;
     let mut greeted = false;
     let mut sender: Option<String> = None;
     let mut recipients: Vec<String> = vec![];
@@ -88,7 +96,7 @@ async fn session(socket: TcpStream, store: Store) -> Result<()> {
                 recipients.clear();
                 reply(
                     &mut reader,
-                    &format!("250-msgpit\r\n250-SIZE {MAX_BYTES}\r\n250 8BITMIME\r\n"),
+                    &format!("250-{hostname}\r\n250-SIZE {MAX_BYTES}\r\n250 8BITMIME\r\n"),
                 )
                 .await?;
             }

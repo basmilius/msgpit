@@ -126,3 +126,21 @@ fn html_links_extract_only_http_targets_and_deduplicate_resources() {
     );
     assert!(links.iter().any(|l| l["url"] == "https://example.test/t"));
 }
+
+#[test]
+fn caniemail_matches_php_feature_counts_unknowns_comments_and_weighting() {
+    let data: Value = serde_json::from_str(include_str!(
+        "../../../reference/tests/fixtures/caniemail/sample.json"
+    ))
+    .unwrap();
+    let cases: Vec<Value> =
+        serde_json::from_str(include_str!("fixtures/html-golden.json")).unwrap();
+    for case in cases {
+        assert_eq!(
+            html::analyse_with(case["html"].as_str().unwrap(), &data).unwrap_or(Value::Null),
+            case["expected"],
+            "{}",
+            case["html"]
+        );
+    }
+}

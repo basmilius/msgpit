@@ -103,6 +103,10 @@ fn unavailable(id: &str, title: &str, reason: impl Into<String>) -> Finding {
 }
 
 pub async fn check(detail: &Detail, network: &Network) -> (Report, usize) {
+    check_with_raw(detail, network, detail.raw_request.as_bytes()).await
+}
+
+pub async fn check_with_raw(detail: &Detail, network: &Network, raw: &[u8]) -> (Report, usize) {
     let mut lookups = 0;
     let origin = origin(detail);
     let domain = header(detail, "from").and_then(|s| domain(&s));
@@ -174,7 +178,7 @@ pub async fn check(detail: &Detail, network: &Network) -> (Report, usize) {
             ));
         } else if header(detail, "authentication-results").is_some() {
             findings.push(unavailable("dkim","DKIM signature, verified here","The receiving server already judged this signature, and it had the key as it was at the time."));
-        } else if let Some(message) = AuthenticatedMessage::parse(detail.raw_request.as_bytes()) {
+        } else if let Some(message) = AuthenticatedMessage::parse(raw) {
             let outputs = auth.verify_dkim(&message).await;
             let evidence = outputs
                 .iter()
@@ -451,10 +455,23 @@ async fn blocklists(ip: IpAddr, network: &Network, lookups: &mut usize) -> Findi
     let mut listed = Vec::new();
     let mut caution = 0;
     let mut checked = 0;
-    for (zone, name) in ZONES {
-        let codes = network
-            .dns("A", &format!("{reversed}.{zone}"), lookups)
-            .await;
+    let mut queries = tokio::task::JoinSet::new();
+    for (index, (zone, name)) in ZONES.into_iter().enumerate() {
+        let network = network.clone();
+        let query = format!("{reversed}.{zone}");
+        queries.spawn(async move {
+            let mut count = 0;
+            let codes = network.dns("A", &query, &mut count).await;
+            (index, zone, name, codes, count)
+        });
+    }
+    let mut answers = Vec::new();
+    while let Some(Ok(answer)) = queries.join_next().await {
+        answers.push(answer);
+    }
+    answers.sort_by_key(|(index, _, _, _, _)| *index);
+    for (_, zone, name, codes, count) in answers {
+        *lookups += count;
         let (weight, evidence) = match codes {
             Ok(codes) => {
                 let verdict = blocklist_verdict(zone, &codes);

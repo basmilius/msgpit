@@ -150,16 +150,30 @@ impl Network {
     }
 
     pub async fn check_links(&self, links: &[Value]) -> Vec<Value> {
+        let mut tasks = tokio::task::JoinSet::new();
+        let permits = Arc::new(tokio::sync::Semaphore::new(8));
+        for (index, link) in links.iter().take(50).enumerate() {
+            let network = self.clone();
+            let link = link.clone();
+            let permits = permits.clone();
+            tasks.spawn(async move {
+                let _permit = permits.acquire().await.expect("Link semaphore open");
+                let mut result = link;
+                let outcome = network
+                    .probe(result["url"].as_str().unwrap_or_default())
+                    .await;
+                for (key, value) in outcome.as_object().unwrap() {
+                    result[key] = value.clone();
+                }
+                (index, result)
+            });
+        }
         let mut results = Vec::new();
-        for link in links.iter().take(50) {
-            let mut result = link.clone();
-            let outcome = self.probe(link["url"].as_str().unwrap_or_default()).await;
-            for (key, value) in outcome.as_object().unwrap() {
-                result[key] = value.clone();
-            }
+        while let Some(Ok(result)) = tasks.join_next().await {
             results.push(result);
         }
-        results
+        results.sort_by_key(|(index, _)| *index);
+        results.into_iter().map(|(_, result)| result).collect()
     }
 
     async fn probe(&self, value: &str) -> Value {
@@ -175,7 +189,12 @@ impl Network {
                 .context("Refused: no host")?
                 .trim_matches(['[', ']']);
             let port = url.port_or_known_default().unwrap_or(80);
-            let addresses: Vec<SocketAddr> = tokio::net::lookup_host((host, port)).await?.collect();
+            let addresses: Vec<SocketAddr> = tokio::time::timeout(
+                Duration::from_secs(3),
+                tokio::net::lookup_host((host, port)),
+            )
+            .await??
+            .collect();
             anyhow::ensure!(!addresses.is_empty(), "Could not resolve host");
             anyhow::ensure!(
                 !addresses.iter().any(|a| refused_address(a.ip())),

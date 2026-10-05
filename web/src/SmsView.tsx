@@ -2,6 +2,7 @@ import clsx from "clsx";
 import { useTranslation } from "react-i18next";
 import { SectionLabel } from "@basmilius/desktop-ui";
 import type { Detail } from "./api";
+import { DeliveryPanel } from "./DeliveryPanel";
 import { CodeBlock } from "./components/CodeBlock";
 import { KeyValueList } from "./components/KeyValueList";
 import { bodyRuns, segmentBars } from "./model";
@@ -72,6 +73,7 @@ export function SmsView({ message }: { message: Detail }) {
                     ))}
                 </ol>
             </section>
+            <DeliveryPanel message={message} />
             <KeyValueList
                 rows={[
                     { key: t("sms.encoding"), value: message.encoding },

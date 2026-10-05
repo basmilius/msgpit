@@ -11,7 +11,7 @@
     "setup": "Setup",
     "smtp": "SMTP {{port}}",
     "http": "HTTP {{port}}",
-    "clearConfirm": "Removes every captured message of {{scope}}, with its attachments. An app that asserts on them starts from a clean slate."
+    "clearConfirm": "Removes every captured message and its attachments."
   },
   "channels": {
     "all": "All",
@@ -96,7 +96,7 @@
       "partial": "Partial",
       "no": "No"
     },
-    "attribution": "Compatibility data from caniemail.com by Rémi Parmentier (MIT), updated {{date}}."
+    "attribution": "Compatibility data from caniemail.com by R\u00e9mi Parmentier (MIT), updated {{date}}."
   },
   "links": {
     "intro": "Every url in the mail. Checking fetches them from this machine, which can spend a one-shot token such as a reset link, so it only happens when you ask.",
@@ -109,7 +109,7 @@
     "failed": "No answer"
   },
   "spam": {
-    "off": "No SpamAssassin is configured. Add its host and port under Settings, Messages, and every new mail gets a score.",
+    "off": "No SpamAssassin is configured. Set MSGPIT_SPAMASSASSIN to the daemon host and port; every new mail then gets a score.",
     "none": "This mail was not scored. The daemon may have been down when it arrived.",
     "score": "{{score}} of {{threshold}}",
     "spam": "Counts as spam",
@@ -142,7 +142,7 @@
   },
   "delivery": {
     "title": "Delivery report",
-    "description": "Calls the webhook of the project the way the provider would and records what the app answers.",
+    "description": "Calls the configured application webhook and records its response.",
     "delivered": "Mark delivered",
     "failed": "Mark failed",
     "noCallback": "No delivery webhook is set for this project, so only the status changes. Set one in the setup.",
@@ -156,7 +156,7 @@
   },
   "scenario": {
     "title": "Force a failure",
-    "description": "The next request this project makes to a provider fails the way the provider fails, then the switch resets. Sending to a magic number fails that one request too.",
+    "description": "The next valid provider request fails, then the switch resets. A magic recipient fails that request too.",
     "none": "Off",
     "armed": "Armed for {{project}}: the next request fails",
     "recipient": "Number {{recipient}}",

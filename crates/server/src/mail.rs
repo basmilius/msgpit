@@ -51,7 +51,9 @@ pub fn capture(
     let body = if let Some(text) = text.as_ref().filter(|t| !t.trim().is_empty()) {
         text.trim().to_string()
     } else {
-        let doc = crate::html::document(html.as_deref().unwrap_or_default());
+        let cleaned = crate::html::regex(r"(?is)<(?:script|style)\b[^>]*>.*?</(?:script|style)>")
+            .replace_all(html.as_deref().unwrap_or_default(), " ");
+        let doc = crate::html::document(&cleaned);
         doc.select(&crate::html::selector("body"))
             .next()
             .map(|body| {
@@ -149,7 +151,11 @@ pub fn headers(raw: &[u8]) -> Vec<MailHeader> {
 }
 
 pub fn enrich(detail: &mut Detail) {
-    let raw = detail.raw_request.as_bytes();
+    let raw = detail.raw_request.clone();
+    enrich_bytes(detail, raw.as_bytes());
+}
+
+pub fn enrich_bytes(detail: &mut Detail, raw: &[u8]) {
     detail.header_list = headers(raw);
     if let Some(parsed) = MessageParser::default().parse(raw) {
         (detail.text, detail.html) = bodies(&parsed);

@@ -65,3 +65,6 @@ export const foldBase64 = (source: string, marker: (bytes: number) => string): s
     flush();
     return out.join("\n");
 };
+
+export const statusTone = (status: number | null): "muted" | "error" | "needsYou" | "idle" =>
+    status === null ? "muted" : status >= 400 ? "error" : status >= 300 ? "needsYou" : "idle";

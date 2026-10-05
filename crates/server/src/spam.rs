@@ -15,9 +15,17 @@ pub async fn check(address: Option<&str>, raw: &[u8]) -> Option<Value> {
     };
     tokio::time::timeout(Duration::from_secs(10), async {
         let mut socket = TcpStream::connect(endpoint).await.ok()?;
-        let normalized = String::from_utf8_lossy(raw)
-            .replace("\r\n", "\n")
-            .replace('\n', "\r\n");
+        let mut normalized = Vec::with_capacity(raw.len());
+        for (index, byte) in raw.iter().copied().enumerate() {
+            if byte == b'\r' && raw.get(index + 1) == Some(&b'\n') {
+                continue;
+            }
+            if byte == b'\n' {
+                normalized.extend_from_slice(b"\r\n");
+            } else {
+                normalized.push(byte);
+            }
+        }
         socket
             .write_all(
                 format!(
@@ -28,7 +36,7 @@ pub async fn check(address: Option<&str>, raw: &[u8]) -> Option<Value> {
             )
             .await
             .ok()?;
-        socket.write_all(normalized.as_bytes()).await.ok()?;
+        socket.write_all(&normalized).await.ok()?;
         let mut response = Vec::new();
         socket
             .take(1024 * 1024)

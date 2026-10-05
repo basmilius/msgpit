@@ -5,7 +5,20 @@ services:
     ports:
       - "127.0.0.1:${MSGPIT_HTTP_PORT:-18080}:8080"
       - "127.0.0.1:${MSGPIT_SMTP_PORT:-11025}:1025"
+    hostname: msgpit
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      default:
+        aliases: [mail, mailpit]
     environment:
+      MSGPIT_SMTP: "${MSGPIT_SMTP:-1}"
+      MSGPIT_PROVIDERS: "${MSGPIT_PROVIDERS-spryng}"
+      MSGPIT_DNS: "${MSGPIT_DNS:-on}"
+      MSGPIT_SPAMASSASSIN: "${MSGPIT_SPAMASSASSIN:-}"
+      MSGPIT_SPRYNG_DLR_URL: "${MSGPIT_SPRYNG_DLR_URL:-}"
+      MSGPIT_SPRYNG_DLR_HEADER: "${MSGPIT_SPRYNG_DLR_HEADER:-}"
+      MSGPIT_SPRYNG_DLR_SECRET: "${MSGPIT_SPRYNG_DLR_SECRET:-}"
       MSGPIT_MAX_MESSAGES: "${MSGPIT_MAX_MESSAGES:-1000}"
     volumes:
       - msgpit_data:/data

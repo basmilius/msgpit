@@ -46,6 +46,8 @@ export function useInbox(channel: string, recipient: string) {
 
     useEffect(() => {
         let burst: number | undefined;
+        const started = Date.now();
+        const notified = new Set<string>();
         const timer = window.setInterval(() => void refreshRef.current(), 15_000);
         const stream = new EventSource("/api/stream");
         stream.onopen = () => {
@@ -53,7 +55,24 @@ export function useInbox(channel: string, recipient: string) {
             void refreshRef.current();
         };
         stream.onerror = () => setStatus("reconnecting");
-        stream.onmessage = () => {
+        stream.onmessage = (event) => {
+            try {
+                const payload = JSON.parse(event.data);
+                if (
+                    payload.type === "message" &&
+                    Date.parse(payload.message.createdAt) >= started &&
+                    !notified.has(payload.message.id)
+                ) {
+                    notified.add(payload.message.id);
+                    if (notified.size > 2000) notified.delete(notified.values().next().value!);
+                    window.dispatchEvent(
+                        new CustomEvent("msgpit:message", { detail: payload.message }),
+                    );
+                }
+            } catch {
+                /* A malformed event still triggers a reload from the authoritative inbox. */
+            }
+
             window.clearTimeout(burst);
             burst = window.setTimeout(() => void refreshRef.current(), 80);
         };

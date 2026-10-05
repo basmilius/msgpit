@@ -17,6 +17,9 @@ RUN --mount=type=cache,target=/usr/local/cargo/registry \
     && cp target/release/msgpit-server /tmp/msgpit-server
 
 FROM debian:bookworm-slim
+ARG VERSION=0.1.0
+ARG REVISION=unknown
+LABEL org.opencontainers.image.title="Msgpit" org.opencontainers.image.version=$VERSION org.opencontainers.image.revision=$REVISION
 RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates && rm -rf /var/lib/apt/lists/*
 RUN groupadd --gid 10001 msgpit \
     && useradd --uid 10001 --gid msgpit --no-create-home msgpit \
@@ -24,10 +27,10 @@ RUN groupadd --gid 10001 msgpit \
     && chown msgpit:msgpit /data
 COPY --from=server /tmp/msgpit-server /usr/local/bin/msgpit
 COPY --from=web /web/dist/ /app/web/
-ENV MSGPIT_DB=/data/msgpit-rust.sqlite \
+ENV MSGPIT_VERSION=$VERSION \
+    MSGPIT_DB=/data/msgpit-rust.sqlite \
     MSGPIT_WEB_DIR=/app/web \
-    MSGPIT_HTTP_ADDR=0.0.0.0:8080 \
-    MSGPIT_SMTP_ADDR=0.0.0.0:1025
+    MSGPIT_HTTP_ADDR=0.0.0.0:8080
 USER msgpit
 WORKDIR /app
 EXPOSE 8080 1025
