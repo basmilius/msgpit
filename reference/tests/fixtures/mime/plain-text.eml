@@ -1,0 +1,10 @@
+From: ClubFin <hello@example.com>
+To: raymond@example.test
+Subject: Probe: werkt een kale PHP SMTP-server?
+Message-ID: <8e24a092f747d3f6e58a0c9afde5485d@example.com>
+MIME-Version: 1.0
+Date: Sun, 13 Sep 2026 14:00:47 +0000
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: quoted-printable
+
+Hallo vanuit Laravel, met een accent: =C3=A9=C3=A9n regel.

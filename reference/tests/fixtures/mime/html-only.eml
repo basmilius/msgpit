@@ -1,0 +1,8 @@
+From: Solvidi <noreply@solvidi.nl>
+To: raymond@example.test
+Subject: Je account is geactiveerd
+MIME-Version: 1.0
+Content-Type: text/html; charset=UTF-8
+
+<html><body><h1>Welkom</h1><p>Je account is <b>geactiveerd</b>.</p>
+<img src="https://solvidi.nl/images/Solvidi.svg" alt="logo"></body></html>

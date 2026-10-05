@@ -1,173 +1,123 @@
 # msgpit
 
-A local catcher for outgoing SMS and push messages. Mailpit, but for message provider APIs.
+A local catcher for SMS and email, running in its own Docker container.
+The Rust server accepts provider HTTP requests and SMTP, stores captured messages in
+SQLite and serves the Messages interface ported from Command Center, using
+[`@basmilius/desktop-ui`](https://github.com/basmilius/desktop/tree/main/packages/desktop-ui).
 
-Your app keeps calling the provider SDK exactly as it does in production. Only the base URL
-differs per environment: point it at msgpit and nothing is ever delivered. The request is stored,
-a realistic provider response comes back, and everything shows up in a web UI.
+This branch rebuilds the PHP proof of concept. Its source, documentation and fixtures
+are preserved in [`reference/`](reference/). The Git history remains intact for pull
+requests to `axilium/msgpit`.
 
-![The msgpit UI](docs/screenshot.png)
+## Run it
 
-## What it gives you
-
-- Every captured message with its raw request, headers masked.
-- Segment and encoding analysis per SMS: GSM-7 or UCS-2, how many segments, and which character
-  forced UCS-2. That last one is usually the reason a message costs four times what you expected.
-- Delivery reports on demand. Mark a message delivered or failed and msgpit calls your webhook
-  the way the provider would, then shows the response.
-- Forced failures, either through a magic recipient number or a one-shot toggle in the UI.
-- **Email too.** msgpit speaks SMTP on 1025, so a project has one inbox for everything it sends
-  rather than a mail catcher beside a message catcher. Html is previewed as the recipient sees it,
-  inline images and all, with attachments to download.
-- Html is checked against what email clients actually support, links are checked on request, and
-  mail is scored with SpamAssassin when you point msgpit at one.
-- New messages appear instantly over SSE, no refresh. The unread count is in the tab title, and
-  over https a desktop notification can announce one while you are working elsewhere.
-
-## Running it
-
-As a Docksal service, add to `.docksal/docksal.yml`:
-
-```yaml
-services:
-  msgpit:
-    hostname: msgpit
-    image: ${MSGPIT_IMAGE:-ghcr.io/axilium/msgpit:1}
-    volumes:
-      - msgpit_data:/data
-    labels:
-      - io.docksal.virtual-host=msgpit.${VIRTUAL_HOST},msgpit.${VIRTUAL_HOST}.*
-      - io.docksal.virtual-port=8080
-      - io.docksal.cert-name=${VIRTUAL_HOST_CERT_NAME:-none}
-    environment:
-      - MSGPIT_SPRYNG_DLR_URL=http://web/sms-status.php
-    healthcheck:
-      interval: ${DOCKSAL_CONTAINER_HEALTHCHECK_INTERVAL:-10s}
-
-volumes:
-  msgpit_data:
+```sh
+docker compose up --build -d --wait
 ```
 
-Or plain Docker:
+Open **http://localhost:18080**. SMTP is available at **localhost:11025**.
+The Compose ports bind to loopback; containers on the same network use `msgpit:8080`
+and `msgpit:1025`. There is no SMTP authentication or TLS.
 
-```bash
-docker run -p 8080:8080 -v msgpit_data:/data ghcr.io/axilium/msgpit:1
+```sh
+curl http://localhost:18080/spryng/v2/messages \
+  -H 'X-Api-Key: development' \
+  -H 'Content-Type: application/json' \
+  -d '{"accountReference":"SPNL0000000","channel":"SMS","from":"Acme","body":{"text":"Hello from msgpit"},"recipients":[{"msisdn":"+31612345678"}]}'
 ```
 
-The UI is on port 8080. Other containers reach the API at `http://msgpit:8080`.
+The inbox updates over SSE. Use the Import .eml button or drop a file onto the window.
+Captured HTML is sandboxed; remote images and scripts are blocked.
 
-Pin the major tag (`:1`). Breaking changes to routes or the `/api` contract get a major bump. To
-try a development build in one project, set `MSGPIT_IMAGE=ghcr.io/axilium/msgpit:dev` in
-`.docksal/docksal-local.env`.
+SQLite lives in the `msgpit_data` volume, separate from the PHP database. Stop the
+container with `docker compose stop`; bring it back with `docker compose up -d --wait`.
+Override host ports with `MSGPIT_HTTP_PORT` and `MSGPIT_SMTP_PORT` when needed.
 
-## Documentation
+## Current scope
 
-The reference documentation lives in [`docs/`](docs/) and is served inside the application under
-**Reference** in the sidebar, so it is there while you are testing:
+The first Rust implementation includes Spryng v2 message capture and balance,
+SMS segment analysis, one-shot failures and magic recipients, SMTP, MIME parsing,
+mail imports and attachment downloads, read state, retention and resumable SSE.
+The web inbox supports channel and recipient filters, source inspection and light/dark themes.
 
-- [Why msgpit exists](docs/01-why.md), and the design decisions behind it
-- [Getting started](docs/02-getting-started.md)
-- [Failure scenarios](docs/03-scenarios.md), including the magic recipient numbers
-- [Encoding and segments](docs/04-segments.md)
-- [Providers](docs/05-providers.md)
-- [HTTP API](docs/06-api.md)
-- [Email](docs/07-email.md)
+This is the starting point for the rebuild. Spryng webhook administration and delivery
+reports, other providers, mail authentication, deliverability, link checks and spam
+scoring still need porting. Unsupported routes return errors and provider capabilities
+report delivery reports as unavailable. See [`docs/rebuild.md`](docs/rebuild.md).
+
+Command Center integration will follow after this container is ready. Command Center
+has not been changed by this rebuild.
 
 ## HTTP API
 
-The `/api` routes drive the UI and are meant for integration tests in consuming projects: assert
-a message was sent, then clear.
-
 | Route | Purpose |
-|---|---|
-| `GET /api/messages?provider=&channel=&to=&since=` | List messages, newest first |
-| `GET /api/messages/{id}` | One message with its raw request and delivery reports |
-| `DELETE /api/messages` | Clear all |
-| `POST /api/messages/import` | Import a raw `.eml` (body is the file) |
-| `POST /api/messages/{id}/authentication` | Rebuild the report with the SPF, DKIM, DMARC, rDNS and blocklist checks |
-| `POST /api/messages/{id}/dlr` | `{"status":"delivered"}` sends a delivery report |
-| `POST /api/scenario` | `{"scenario":"ServerError"}` fails the next provider request |
-| `GET /api/providers` | Enabled providers and their capabilities |
-| `GET /api/stream` | SSE stream of new messages and status changes |
-| `GET /healthz` | Health check |
+| --- | --- |
+| `GET /healthz` | Database readiness and server version |
+| `GET /api/messages?provider=&channel=&to=&since=` | Newest messages and global unread count |
+| `GET /api/messages/{id}` | Message, raw request and mail parts |
+| `DELETE /api/messages` | Clear captured messages |
+| `POST /api/messages/{id}/read` | Mark one message read |
+| `POST /api/messages/read` | Mark every message read |
+| `POST /api/messages/import` | Import raw .eml bytes; optional percent-encoded `X-Msgpit-Filename` |
+| `GET /api/messages/{id}/parts/{part}` | Download a MIME part or the original .eml |
+| `GET /api/providers` | Enabled provider capabilities |
+| `GET /api/scenarios` | Failure scenarios and magic recipients |
+| `POST /api/scenario` | Arm the next valid provider send with `{"scenario":"ServerError"}`; null disarms |
+| `GET /api/stream?seq=N` | Replay and live SSE; `Last-Event-ID` also supported |
 
-Example, asserting from a test:
-
-```bash
-curl -s http://msgpit:8080/api/messages?to=%2B31612345678 | jq '.messages[0].body'
-curl -s -X DELETE http://msgpit:8080/api/messages
-```
-
-## Forcing failures
-
-Two ways, both provider-agnostic.
-
-**Magic recipients.** Send to `+31600000001` and up and the provider's own error response comes
-back instead. The current list is in the app under Reference, and at `GET /api/scenarios`.
-
-**One-shot toggle.** Pick a scenario in the UI, or `POST /api/scenario`. The next provider
-request fails and the toggle clears itself.
-
-Nothing is stored when a scenario fires: as far as your app is concerned the request never landed.
-See [Failure scenarios](docs/03-scenarios.md).
+Message summaries retain the PHP API's camelCase fields. Additional mail detail fields
+are `html`, `headerList` and `parts`. SSE includes `message`, `read`, `cleared`, `scenario` and `reset`; reload the
+inbox on `reset` when a cursor is outside the retained event window.
 
 ## Configuration
 
-| Variable | Default | |
-|---|---|---|
-| `MSGPIT_DB` | `/data/msgpit.sqlite` | SQLite path |
-| `MSGPIT_PROVIDERS` | all | Comma-separated provider ids to enable |
-| `MSGPIT_MAX_MESSAGES` | `1000` | Older messages are pruned beyond this |
-| `MSGPIT_<PROVIDER>_DLR_URL` | - | Delivery-report callback, e.g. `http://web/sms-status.php` |
-| `MSGPIT_<PROVIDER>_DLR_HEADER` | - | Header name to authenticate that callback |
-| `MSGPIT_<PROVIDER>_DLR_SECRET` | - | Its value. Set both or neither |
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `MSGPIT_HTTP_ADDR` | `0.0.0.0:8080` | HTTP listener inside the container |
+| `MSGPIT_SMTP_ADDR` | `0.0.0.0:1025` | SMTP listener inside the container |
+| `MSGPIT_DB` | `/data/msgpit-rust.sqlite` | New Rust database; PHP data is not migrated |
+| `MSGPIT_WEB_DIR` | `/app/web` in Docker | Built web assets |
+| `MSGPIT_MAX_MESSAGES` | `1000` | Retain newest messages, remove associated files |
+| `MSGPIT_PROVIDERS` | `spryng` | Comma-separated enabled providers; empty disables provider HTTP routes |
+| `RUST_LOG` | `msgpit_server=info,tower_http=info` | Logging filter |
 
-Data lives in SQLite at `MSGPIT_DB`. Losing it on a container reset is fine and expected.
+HTTP bodies and SMTP messages are limited to 30 MiB. SMTP sessions have a 60-second
+idle timeout, a 128-connection cap and at most 100 recipients per transaction.
+The container runs as uid 10001. Its healthcheck tests HTTP and the SMTP greeting.
 
 ## Development
 
-This repo is itself a Docksal project. There is no web container: msgpit serves itself on 8080
-and carries the vhost label.
+Rust toolchain and Bun are required for local development.
 
-```bash
-fin up                  # UI at http://msgpit.docksal.site
-fin exec composer install
-fin exec composer test  # PHPUnit, the Markdown renderer, and the release versioning
-fin exec composer stan  # PHPStan, level max
+```sh
+cd web && bun install && bun run build
+cd ..
+MSGPIT_DB=./data/msgpit.sqlite cargo run -p msgpit-server
 ```
 
-## Releasing
+For UI development against the Docker server, use `cd web && bun run dev`.
+Vite proxies `/api` to `http://127.0.0.1:18080`.
 
-Every push to `main` publishes a release. The version comes from the conventional commits since
-the last tag: a breaking change bumps major, a `feat:` bumps minor, anything else bumps patch. The
-workflow tags the commit, creates the GitHub release and pushes `X.Y.Z`, `X.Y`, `X` and `latest`
-to `ghcr.io/axilium/msgpit` for amd64 and arm64.
-
-Pushes to `dev` publish `:dev` and `:dev-<sha>` without tagging or releasing anything, so a
-project can try a build before it lands.
-
-There is nothing to bump by hand. `.github/next-version.sh` decides the number and is covered by
-`tests/Shell/next-version.test.sh`.
-
-The source is mounted over `/app`, so changes are live without rebuilding. Composer is dev
-tooling only: the runtime registers its own autoloader and needs no `vendor/`.
-
-Send something by hand:
-
-```bash
-curl -X POST http://msgpit.docksal.site/spryng/v2/messages \
-  -H 'X-Api-Key: anything' -H 'Content-Type: application/json' \
-  -d '{"accountReference":"SPNL0000000","channel":"SMS","from":"Acme",
-       "body":{"text":"Hello 👋"},"recipients":[{"msisdn":"+31612345678"}]}'
+```sh
+cargo fmt --all --check
+cargo clippy --workspace --all-targets -- -D warnings
+cargo test --workspace
+cd web && bun run build
 ```
 
-## Adding a provider
+Verify the built image, including its bundled UI, with:
 
-1. `src/Provider/<Name>/<Name>Provider.php` implementing `Provider`, plus a `CLAUDE.md` next to it
-   documenting the API.
-2. Implement only the endpoints your apps call. Mirror the real path, status codes and body shapes.
-3. Add fixtures in `tests/fixtures/<id>/<case>/`.
-4. Register the class in `providers.php`.
-5. Run `fin exec composer test`. The contract test picks the provider up automatically.
+```sh
+docker compose up --build -d --wait
+python3 scripts/smoke.py
+```
 
-Core never references a concrete provider, so adding one needs no core changes.
+The smoke test creates tagged SMS, SMTP and import samples and leaves them in the
+inbox for inspection. It does not clear existing captures. CI builds and tests the
+container on pull requests; it does not publish an image or a release.
+
+## Upstream workflow
+
+`origin` points to `basmilius/msgpit`; `upstream` points to `axilium/msgpit`.
+Development is on `feat/rust-rebuild`, leaving the fork's main branch aligned with
+upstream. Push a reviewed change to origin, then open a PR targeting `axilium/msgpit`.

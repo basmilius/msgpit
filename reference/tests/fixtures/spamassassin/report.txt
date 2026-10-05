@@ -1,0 +1,25 @@
+SPAMD/1.1 0 EX_OK
+Content-length: 1013
+Spam: True ; 6.2 / 5.0
+
+Spam detection software, running on the system "spamassassin",
+has identified this incoming email as possible spam.  The original
+message has been attached to this so you can view it or label
+similar future email.  If you have any questions, see
+the administrator of that system for details.
+
+Content preview:  CONGRATULATIONS! You have WON $1,000,000 USD! 100% FREE! No
+   risk! Send your bank details now to claim your prize. 
+
+Content analysis details:   (6.2 points, 5.0 required)
+
+ pts rule name              description
+---- ---------------------- --------------------------------------------------
+ 0.1 MISSING_MID            Missing Message-Id: header
+-0.0 NO_RECEIVED            Informational: message has no Received headers
+ 1.4 MISSING_DATE           Missing Date: header
+-0.0 NO_RELAYS              Informational: message was not relayed via SMTP
+ 0.0 LOTS_OF_MONEY          Huge... sums of money
+ 2.7 RISK_FREE              No risk!
+ 2.0 ADVANCE_FEE_2_NEW_MONEY Advance Fee fraud and lots of money
+

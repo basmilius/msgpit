@@ -1,0 +1,48 @@
+{
+  "version": 2,
+  "rev": 14,
+  "name": "msgpit",
+  "color": "#7c74ff",
+  "views": [
+    {
+      "id": "main",
+      "name": "Canvas",
+      "kind": "canvas",
+      "nodes": [],
+      "texts": [],
+      "edges": [],
+      "layouts": []
+    },
+    {
+      "id": "terminal-kuo339gx",
+      "name": "Claude Code",
+      "kind": "terminal",
+      "node": {
+        "provider": "claude",
+        "runtimeMode": "full-access"
+      }
+    },
+    {
+      "id": "browser-r32974ji",
+      "name": "msgpit",
+      "titleSource": "auto",
+      "kind": "browser",
+      "url": "http://msgpit.docksal.site/"
+    },
+    {
+      "id": "terminal-39ntfsrf",
+      "name": "Terminal",
+      "kind": "terminal",
+      "node": {}
+    },
+    {
+      "id": "view-z5wp7ubx",
+      "name": "Canvas 2",
+      "kind": "canvas",
+      "nodes": [],
+      "texts": [],
+      "edges": [],
+      "layouts": []
+    }
+  ]
+}

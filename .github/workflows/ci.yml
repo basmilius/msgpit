@@ -1,124 +1,29 @@
-name: CI
-
+name: Check rebuild
 on:
   push:
-    branches: ['**']
+    branches: [feat/rust-rebuild]
   pull_request:
-
+permissions:
+  contents: read
 jobs:
-  test:
-    name: Tests
+  checks:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
-
-      - name: Set up PHP
-        uses: shivammathur/setup-php@v2
+      - uses: dtolnay/rust-toolchain@stable
         with:
-          php-version: '8.3'
-          extensions: pdo_sqlite
-          coverage: none
-
-      - name: Set up Node
-        uses: actions/setup-node@v4
+          components: rustfmt, clippy
+      - uses: oven-sh/setup-bun@v2
         with:
-          node-version: '22'
-
-      - name: Install dev tooling
-        run: composer install --no-interaction --no-progress --prefer-dist
-
-      - name: PHPUnit
-        run: composer run test:php
-
-      - name: Markdown renderer
-        run: composer run test:js
-
-      - name: Release versioning
-        run: composer run test:shell
-
-      - name: PHPStan
-        run: composer run stan
-
-  image:
-    name: Image builds and answers
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Build
-        run: docker build -t msgpit:ci --build-arg MSGPIT_VERSION=ci .
-
-      # The image ships without vendor/ and without the source mounted, which is the one thing
-      # local development never exercises.
-      - name: Run and check it serves
-        run: |
-          docker run -d --name msgpit-ci -p 8080:8080 -p 1025:1025 msgpit:ci
-          for i in $(seq 1 30); do
-            if [ "$(docker inspect --format '{{.State.Health.Status}}' msgpit-ci)" = healthy ]; then
-              break
-            fi
-            sleep 1
-          done
-
-          test "$(docker inspect --format '{{.State.Health.Status}}' msgpit-ci)" = healthy
-
-          curl -sf http://localhost:8080/healthz | grep -q '"status":"ok"'
-          curl -sf http://localhost:8080/ > /dev/null
-          test "$(curl -s http://localhost:8080/api/docs | grep -o '"slug"' | wc -l)" -gt 0
-
-          status=$(curl -s -o /dev/null -w '%{http_code}' -X POST \
-            http://localhost:8080/spryng/v2/messages \
-            -H 'X-Api-Key: ci' -H 'Content-Type: application/json' \
-            -d '{"accountReference":"SPNL0000000","channel":"SMS","from":"CI",
-                 "body":{"text":"hello"},"recipients":[{"msisdn":"+31612345678"}]}')
-          test "$status" = 202
-
-          curl -s http://localhost:8080/api/messages | grep -q '"body":"hello"'
-          # docker exec runs as the image user; check the server process itself.
-          docker exec msgpit-ci ps -o user,comm | grep php | grep -q www-data
-
-      # The SMTP listener is a second process in the same container, and a silent one looks
-      # exactly like a working one, so it gets its own end-to-end check.
-      - name: Accept a mail over SMTP
-        run: |
-          python3 - <<'PY'
-          import smtplib
-          from email.message import EmailMessage
-
-          message = EmailMessage()
-          message['From'] = 'CI <ci@example.test>'
-          message['To'] = 'raymond@example.test'
-          message['Subject'] = 'Een onderwerp met een accent: café'
-          message.set_content('De tekstversie.')
-          message.add_alternative('<p>De <b>html</b>versie.</p>', subtype='html')
-          message.add_attachment(b'%PDF-1.4 ci', maintype='application', subtype='pdf', filename='rapport.pdf')
-
-          with smtplib.SMTP('127.0.0.1', 1025, timeout=10) as smtp:
-              smtp.ehlo('ci.test')
-              smtp.send_message(message)
-          PY
-
-          sleep 1
-          curl -s 'http://localhost:8080/api/messages?channel=email' > mail.json
-
-          python3 - <<'PY'
-          import json, sys
-
-          messages = json.load(open('mail.json'))['messages']
-          assert len(messages) == 1, f'expected one mail, got {len(messages)}'
-
-          message = messages[0]
-          assert message['provider'] == 'smtp', message['provider']
-          assert message['channel'] == 'email', message['channel']
-          assert message['to'] == 'raymond@example.test', message['to']
-          assert message['meta']['subject'] == 'Een onderwerp met een accent: café', message['meta']['subject']
-          assert message['meta']['attachments'] == 1, message['meta']
-          assert message['meta']['hasHtml'] is True, message['meta']
-          print('mail captured and parsed')
-          PY
-
-      - name: Container logs on failure
-        if: failure()
-        run: docker logs msgpit-ci
+          bun-version: 1.4.0
+      - run: cargo fmt --all --check
+      - run: cargo clippy --workspace --all-targets --locked -- -D warnings
+      - run: cargo test --workspace --locked
+      - run: bun install --frozen-lockfile && bun run build
+        working-directory: web
+      - run: docker compose up --build -d --wait
+      - run: python3 scripts/smoke.py
+      - if: failure()
+        run: docker compose logs
+      - if: always()
+        run: docker compose down

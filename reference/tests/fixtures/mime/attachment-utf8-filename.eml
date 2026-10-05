@@ -1,0 +1,19 @@
+From: InvalPool <info@invalpool.nl>
+To: raymond@example.test
+Subject: Evaluatie
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="outer"
+
+--outer
+Content-Type: text/plain; charset=utf-8
+
+Zie bijlage.
+
+--outer
+Content-Type: application/pdf
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment; filename*=UTF-8''evaluatie%20caf%C3%A9.pdf
+
+JVBERi0xLjQgbmVwIGV2YWx1YXRpZWZvcm11bGllcg==
+
+--outer--

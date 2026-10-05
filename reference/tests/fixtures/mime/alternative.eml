@@ -1,0 +1,17 @@
+From: ClubFin <hello@example.com>
+To: raymond@example.test
+Subject: Wachtwoord opnieuw instellen
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="_=_boundary_=_"
+
+--_=_boundary_=_
+Content-Type: text/plain; charset=utf-8
+
+Klik op de link om je wachtwoord opnieuw in te stellen.
+
+--_=_boundary_=_
+Content-Type: text/html; charset=utf-8
+
+<p>Klik op de <a href="https://clubfin.test/reset">link</a>.</p>
+
+--_=_boundary_=_--

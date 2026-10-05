@@ -1,0 +1,20 @@
+SPAMD/1.1 0 EX_OK
+Content-length: 749
+Spam: False ; 0.3 / 5.0
+
+Spam detection software, running on the system "spamassassin",
+has NOT identified this incoming email as spam.  The original
+message has been attached to this so you can view it or label
+similar future email.  If you have any questions, see
+the administrator of that system for details.
+
+Content preview:  Beste Jansen, Je aanstelling voor week 12 is bevestigd. 
+
+Content analysis details:   (0.3 points, 5.0 required)
+
+ pts rule name              description
+---- ---------------------- --------------------------------------------------
+-0.0 NO_RECEIVED            Informational: message has no Received headers
+ 0.3 MSGID_SHORT            Message-ID is unusually short
+-0.0 NO_RELAYS              Informational: message was not relayed via SMTP
+

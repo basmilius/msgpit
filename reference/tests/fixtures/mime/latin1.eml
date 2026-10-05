@@ -1,0 +1,8 @@
+From: Oud Systeem <oud@example.test>
+To: raymond@example.test
+Subject: =?ISO-8859-1?Q?Caf=E9_bezoek?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=ISO-8859-1
+Content-Transfer-Encoding: 8bit
+
+Een café met een accent, in latin-1.

@@ -1,0 +1,54 @@
+@import "tailwindcss";
+@import "@basmilius/desktop-ui/theme.css";
+@source '../node_modules/@basmilius/desktop-ui/src';
+
+@layer base {
+  html {
+    font-size: 15px;
+  }
+  html,
+  body,
+  #root {
+    height: 100%;
+    overscroll-behavior: none;
+  }
+  body {
+    margin: 0;
+    overflow: hidden;
+    font-family: "Geist Variable", sans-serif;
+    background: var(--color-bg);
+    color: var(--color-text);
+  }
+  button {
+    cursor: pointer;
+  }
+  button:disabled {
+    cursor: default;
+  }
+}
+
+@media (max-width: 760px) {
+  .app-sidebar {
+    width: 64px;
+  }
+  .sidebar-label,
+  .app-sidebar [data-slot="pill"],
+  .listener-pills {
+    display: none;
+  }
+  .messages-toolbar {
+    overflow-x: auto;
+  }
+  .messages-toolbar > * {
+    flex-shrink: 0;
+  }
+  .message-list {
+    width: 100%;
+  }
+  .message-columns:not([data-detail-open="true"]) .message-detail {
+    display: none;
+  }
+  .message-columns[data-detail-open="true"] .message-list {
+    display: none;
+  }
+}

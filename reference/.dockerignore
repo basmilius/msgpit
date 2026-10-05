@@ -1,0 +1,19 @@
+# Everything the runtime does not need. Composer is dev tooling only.
+/vendor/
+/.git/
+/.github/
+/.docksal/
+/.idea/
+/.phpunit.cache/
+/tests/
+/docs/screenshot.png
+composer.json
+composer.lock
+phpunit.xml.dist
+phpstan.neon.dist
+.editorconfig
+.dockerignore
+Dockerfile
+CLAUDE.md
+README.md
+*.sqlite

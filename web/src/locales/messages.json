@@ -1,0 +1,226 @@
+{
+  "label": "Messages",
+  "title": "Messages",
+  "toolbar": {
+    "project": "Project",
+    "allProjects": "All projects",
+    "channel": "Channel",
+    "search": "Filter by recipient",
+    "markAllRead": "Mark all as read",
+    "clear": "Clear messages",
+    "setup": "Setup",
+    "smtp": "SMTP {{port}}",
+    "http": "HTTP {{port}}",
+    "clearConfirm": "Removes every captured message of {{scope}}, with its attachments. An app that asserts on them starts from a clean slate."
+  },
+  "channels": {
+    "all": "All",
+    "email": "Mail",
+    "sms": "SMS",
+    "push": "Push",
+    "whatsapp": "WhatsApp"
+  },
+  "listener": {
+    "listening": "Listening on port {{port}}",
+    "portInUse": "Port {{port}} is in use by another program",
+    "stopped": "Stopped",
+    "error": "Could not start on port {{port}}"
+  },
+  "storage": {
+    "error": "The message storage could not be opened: {{message}}"
+  },
+  "list": {
+    "label": "Messages",
+    "empty": "No messages yet. Point an app at the catcher and what it sends shows up here.",
+    "emptyFiltered": "Nothing matches this filter.",
+    "emptyAction": "Setup",
+    "unread": "Unread",
+    "project": "Project {{name}}",
+    "emptyActionHint": "Show the setup"
+  },
+  "status": {
+    "accepted": "Accepted",
+    "delivered": "Delivered",
+    "failed": "Failed"
+  },
+  "detail": {
+    "pick": "Pick a message to read it.",
+    "gone": "This message is gone.",
+    "from": "From",
+    "to": "To",
+    "project": "Project",
+    "provider": "Provider",
+    "received": "Received",
+    "checkWithAssistant": "Check",
+    "checkSms": "Check",
+    "copy": "Copy",
+    "checkWithAssistantHint": "Check this mail",
+    "checkSmsHint": "Check this message"
+  },
+  "mail": {
+    "tabs": {
+      "preview": "Preview",
+      "text": "Text",
+      "headers": "Headers",
+      "source": "Source",
+      "html": "HTML",
+      "check": "HTML check",
+      "links": "Links",
+      "spam": "Spam",
+      "attachments": "Attachments"
+    },
+    "noHtml": "This mail has no HTML part.",
+    "noText": "This mail has no plain text part. Anyone reading mail without HTML gets nothing.",
+    "previewLabel": "The mail as the recipient sees it",
+    "headerName": "Header",
+    "sourceMessage": "As received",
+    "sourceHtml": "HTML as sent",
+    "attachmentNone": "No attachments.",
+    "download": "Download",
+    "inline": "Inline",
+    "bytes": "{{size}}",
+    "showFull": "Show unfolded",
+    "fold": "Fold base64",
+    "tabsLabel": "Views of this mail"
+  },
+  "check": {
+    "headline": "{{supported}}% of the tested email client versions support everything this mail uses.",
+    "split": "{{partial}}% partially, {{unsupported}}% not at all, over {{features}} features.",
+    "worth": "Worth a second look, worst first",
+    "none": "Every feature this mail uses is supported everywhere that was tested.",
+    "nothing": "Nothing in this HTML is in the compatibility data.",
+    "columns": {
+      "feature": "Feature",
+      "category": "Kind",
+      "yes": "Yes",
+      "partial": "Partial",
+      "no": "No"
+    },
+    "attribution": "Compatibility data from caniemail.com by Rémi Parmentier (MIT), updated {{date}}."
+  },
+  "links": {
+    "intro": "Every url in the mail. Checking fetches them from this machine, which can spend a one-shot token such as a reset link, so it only happens when you ask.",
+    "check": "Check links",
+    "checking": "Checking",
+    "none": "This mail has no links.",
+    "link": "Link",
+    "resource": "Loaded by the client",
+    "redirect": "Redirects to {{url}}",
+    "failed": "No answer"
+  },
+  "spam": {
+    "off": "No SpamAssassin is configured. Add its host and port under Settings, Messages, and every new mail gets a score.",
+    "none": "This mail was not scored. The daemon may have been down when it arrived.",
+    "score": "{{score}} of {{threshold}}",
+    "spam": "Counts as spam",
+    "ham": "Counts as clean",
+    "points": "Points",
+    "rule": "Rule",
+    "description": "What it reacted to",
+    "caveat": "Scored on its own: a real server adds Received headers, SPF, DKIM and reputation. Read it as a hint about the content."
+  },
+  "sms": {
+    "encoding": "Encoding",
+    "segments": "Segments",
+    "characters": "Characters",
+    "units": "{{used}} of {{capacity}} {{unit}}",
+    "septets": "septets",
+    "codeUnits": "units",
+    "summary": "{{encoding}}, {{count}} segments, {{units}} {{unit}} used, {{characters}} characters",
+    "summaryOne": "{{encoding}}, 1 segment, {{units}} {{unit}} used, {{characters}} characters",
+    "forced": "Highlighted characters forced UCS-2: that single character cut the capacity from 160 to 70 for the whole message.",
+    "segmentLabel": "Segment {{number}}",
+    "body": "Message"
+  },
+  "push": {
+    "title": "Title",
+    "body": "Body",
+    "data": "Data",
+    "payload": "Payload",
+    "target": "Target",
+    "none": "No data"
+  },
+  "delivery": {
+    "title": "Delivery report",
+    "description": "Calls the webhook of the project the way the provider would and records what the app answers.",
+    "delivered": "Mark delivered",
+    "failed": "Mark failed",
+    "noCallback": "No delivery webhook is set for this project, so only the status changes. Set one in the setup.",
+    "sent": "Callback sent",
+    "statusOnly": "Only the status changed",
+    "response": "The app answered {{status}}",
+    "noResponse": "No answer",
+    "reports": "Reports sent",
+    "request": "Request",
+    "answer": "Response"
+  },
+  "scenario": {
+    "title": "Force a failure",
+    "description": "The next request this project makes to a provider fails the way the provider fails, then the switch resets. Sending to a magic number fails that one request too.",
+    "none": "Off",
+    "armed": "Armed for {{project}}: the next request fails",
+    "recipient": "Number {{recipient}}",
+    "InvalidNumber": "Invalid number",
+    "Unauthorized": "Unauthorized",
+    "RateLimited": "Rate limited",
+    "ServerError": "Server error"
+  },
+  "raw": {
+    "title": "Request as received",
+    "masked": "Secrets are masked."
+  },
+  "setup": {
+    "title": "Point an app at the catcher",
+    "intro": "One catcher serves every project. The project is the SMTP username and the first path segment, so each app only changes its host and a name.",
+    "project": "Project",
+    "projectHint": "Choose or type a name; a new one exists as soon as an app uses it.",
+    "newProject": "Another project",
+    "newProjectPlaceholder": "project-name",
+    "host": "Host",
+    "hostHint": "A Docksal container reaches this machine as host.docker.internal; something running on the Mac itself uses localhost.",
+    "mail": "Mail",
+    "mailHint": "Any password works. Without a login the project is default.",
+    "symfony": "Symfony MAILER_DSN",
+    "laravel": "Laravel .env",
+    "smtpServer": "SMTP server",
+    "providers": "Provider APIs",
+    "providersHint": "Only the base URL changes. Keep the real key out of it: the catcher checks that a key is there and never what it is.",
+    "api": "Test API",
+    "apiHint": "For integration tests: list, assert on and clear what the project sent. The routes match msgpit's.",
+    "webhook": "Delivery reports",
+    "webhookHint": "Where the catcher calls back when you mark an SMS delivered or failed.",
+    "webhookUrl": "Webhook URL",
+    "webhookHeader": "Header name",
+    "webhookSecret": "Header value",
+    "webhookReachable": "Called from this machine, so a Docksal site is reachable as its http://*.docksal.site address.",
+    "notRunning": "The catcher is not listening, so nothing sends to it yet. See Settings, Messages.",
+    "magic": "Magic numbers",
+    "magicHint": "Send an SMS to one of these and the request fails instead of being stored.",
+    "copy": "Copy",
+    "use": "Use",
+    "username": "Username",
+    "nextRequest": "Next request of {{project}}"
+  },
+  "settings": {
+    "title": "Messages",
+    "description": "The local catcher for the mail, SMS and push your apps send while you develop.",
+    "enabled": "Catch messages",
+    "enabledDescription": "Listens while the app runs. Turn it off to free both ports.",
+    "smtpPort": "SMTP port",
+    "smtpPortDescription": "Mail from the apps arrives here.",
+    "httpPort": "HTTP port",
+    "httpPortDescription": "The provider APIs and the test API listen here.",
+    "spamd": "SpamAssassin",
+    "spamdDescription": "host:port of a spamd. Every new mail gets a score when it is set.",
+    "notify": "Notify on new messages",
+    "notifyDescription": "A desktop notification when the app is in the background, and a toast when it is not. A burst counts as one.",
+    "status": "Status",
+    "portInvalid": "A port is a number from 1 to 65535."
+  },
+  "palette": {
+    "setup": "Messages: show the setup"
+  },
+  "ai": {
+    "context": "A message of {{project}}"
+  }
+}

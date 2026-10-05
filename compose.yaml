@@ -1,0 +1,16 @@
+services:
+  msgpit:
+    build: .
+    image: msgpit:local
+    ports:
+      - "127.0.0.1:${MSGPIT_HTTP_PORT:-18080}:8080"
+      - "127.0.0.1:${MSGPIT_SMTP_PORT:-11025}:1025"
+    environment:
+      MSGPIT_MAX_MESSAGES: "${MSGPIT_MAX_MESSAGES:-1000}"
+    volumes:
+      - msgpit_data:/data
+    init: true
+    restart: unless-stopped
+
+volumes:
+  msgpit_data:

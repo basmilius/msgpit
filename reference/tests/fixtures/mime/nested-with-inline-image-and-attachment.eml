@@ -1,0 +1,59 @@
+Date: Sun, 13 Sep 2026 14:01:26 +0000
+Message-ID: <152d0136ea5fe6592674d53c6f4cb973.info@invalpool.nl>
+MIME-Version: 1.0
+From: Administratie InvalPool <info@invalpool.nl>
+To: raymond@example.test
+Subject: =?utf-8?Q?Aanstelling_bevestigd_=E2=80=94_Jansen_=28caf=C3=A9=29?=
+Content-Type: multipart/mixed;
+ boundary="=_2d354fb47b07e89a7a0f0db2cbb92ecb"
+
+--=_2d354fb47b07e89a7a0f0db2cbb92ecb
+Content-Type: multipart/alternative;
+ boundary="=_0ae70ac1a18ff718c645682cf0c2077b"
+
+--=_0ae70ac1a18ff718c645682cf0c2077b
+Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset=utf-8
+
+Beste Jansen,
+
+Je aanstelling is bevestigd.
+--=_0ae70ac1a18ff718c645682cf0c2077b
+Content-Type: multipart/related;
+ boundary="=_985daa36d9ec7bd5f7844495a48a3f45"
+
+--=_985daa36d9ec7bd5f7844495a48a3f45
+Content-Transfer-Encoding: quoted-printable
+Content-Type: text/html; charset=utf-8
+
+<html><body style=3D"font-family:sans-serif"><img src=3D"cid:logo.png" alt=
+=3D"logo"><p>Beste <b>Jansen</b>,</p><p>Je aanstelling is bevestigd.</p></b=
+ody></html>
+--=_985daa36d9ec7bd5f7844495a48a3f45
+Content-Transfer-Encoding: base64
+Content-ID: <17893080866aa6acb655c0f910620343>
+Content-Type: image/png;
+ name=logo.png
+Content-Disposition: inline;
+ filename=logo.png;
+ size=280
+
+UE5HREFUQVBOR0RBVEFQTkdEQVRBUE5HREFUQVBOR0RBVEFQTkdEQVRBUE5HREFUQVBOR0RBVEFQ
+TkdEQVRBUE5HREFUQVBOR0RBVEFQTkdEQVRBUE5HREFUQVBOR0RBVEFQTkdEQVRBUE5HREFUQVBO
+R0RBVEFQTkdEQVRBUE5HREFUQVBOR0RBVEFQTkdEQVRBUE5HREFUQVBOR0RBVEFQTkdEQVRBUE5H
+REFUQVBOR0RBVEFQTkdEQVRBUE5HREFUQVBOR0RBVEFQTkdEQVRBUE5HREFUQVBOR0RBVEFQTkdE
+QVRBUE5HREFUQVBOR0RBVEFQTkdEQVRBUE5HREFUQVBOR0RBVEFQTkdEQVRBUE5HREFUQQ==
+--=_985daa36d9ec7bd5f7844495a48a3f45--
+
+--=_0ae70ac1a18ff718c645682cf0c2077b--
+
+--=_2d354fb47b07e89a7a0f0db2cbb92ecb
+Content-Transfer-Encoding: base64
+Content-Type: application/pdf;
+ name=evaluatieformulier.pdf
+Content-Disposition: attachment;
+ filename=evaluatieformulier.pdf;
+ size=23
+
+JVBERi0xLjQgbmVwIHBkZiBpbmhvdWQ=
+--=_2d354fb47b07e89a7a0f0db2cbb92ecb--

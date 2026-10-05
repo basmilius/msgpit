@@ -1,0 +1,2 @@
+reference/tests/fixtures/mime/*.eml -text
+reference/tests/fixtures/spamassassin/*.txt -text

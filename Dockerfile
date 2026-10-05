@@ -1,54 +1,35 @@
-FROM php:8.3-cli-alpine
+FROM oven/bun:1.4.0 AS web
+WORKDIR /web
+COPY web/package.json web/bun.lock ./
+RUN bun install --frozen-lockfile
+COPY web/ ./
+RUN bun run build
 
-# Set by the release workflow from the git tag; "dev" in a local build.
-ARG MSGPIT_VERSION=dev
-
-LABEL org.opencontainers.image.title="msgpit" \
-      org.opencontainers.image.description="Local catcher for outgoing SMS and push messages. Mailpit, but for message provider APIs." \
-      org.opencontainers.image.source="https://github.com/axilium/msgpit" \
-      org.opencontainers.image.documentation="https://github.com/axilium/msgpit#readme" \
-      org.opencontainers.image.licenses="MIT" \
-      org.opencontainers.image.version="${MSGPIT_VERSION}"
-
-WORKDIR /app
-
-# su-exec is how the entrypoint drops privileges; ~20kB and the only package we add.
-RUN apk add --no-cache su-exec
-
-# The source is mounted over /app during development, so a stale opcache entry is pure confusion.
-RUN printf 'opcache.revalidate_freq=0\n' > /usr/local/etc/php/conf.d/msgpit.ini
-
-# No vendor/ at runtime: index.php registers its own autoloader. docs/ ships too, because the
-# UI serves the reference pages from it.
-COPY providers.php bootstrap.php ./
-COPY src/ ./src/
-COPY public/ ./public/
-COPY bin/ ./bin/
+FROM rust:1.98-bookworm AS server
+WORKDIR /build
+COPY Cargo.toml Cargo.lock ./
+COPY crates/ ./crates/
 COPY data/ ./data/
-COPY docs/ ./docs/
+RUN --mount=type=cache,target=/usr/local/cargo/registry \
+    --mount=type=cache,target=/build/target \
+    cargo build --release --locked --bin msgpit-server \
+    && cp target/release/msgpit-server /tmp/msgpit-server
 
-COPY docker-entrypoint.sh /usr/local/bin/
-
-RUN mkdir -p /data \
-    && chown -R www-data:www-data /data
-
-ENV MSGPIT_DB=/data/msgpit.sqlite \
-    MSGPIT_VERSION=${MSGPIT_VERSION} \
-    MSGPIT_SMTP_PORT=1025 \
-    PHP_CLI_SERVER_WORKERS=16
-
-VOLUME /data
-
-# 8080 is the UI and the provider APIs, 1025 is SMTP.
+FROM debian:bookworm-slim
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates && rm -rf /var/lib/apt/lists/*
+RUN groupadd --gid 10001 msgpit \
+    && useradd --uid 10001 --gid msgpit --no-create-home msgpit \
+    && mkdir -p /data /app/web \
+    && chown msgpit:msgpit /data
+COPY --from=server /tmp/msgpit-server /usr/local/bin/msgpit
+COPY --from=web /web/dist/ /app/web/
+ENV MSGPIT_DB=/data/msgpit-rust.sqlite \
+    MSGPIT_WEB_DIR=/app/web \
+    MSGPIT_HTTP_ADDR=0.0.0.0:8080 \
+    MSGPIT_SMTP_ADDR=0.0.0.0:1025
+USER msgpit
+WORKDIR /app
 EXPOSE 8080 1025
-
-# Starts as root so the entrypoint can fix /data, then runs the server as www-data.
-ENTRYPOINT ["docker-entrypoint.sh"]
-
-# Both processes have to be up: a silent SMTP listener looks exactly like a working one.
-HEALTHCHECK --interval=10s --timeout=3s --start-period=5s --retries=3 \
-    CMD php -r '$web = @file_get_contents("http://127.0.0.1:8080/healthz"); \
-        $smtp = getenv("MSGPIT_SMTP") === "0" ?: @fsockopen("127.0.0.1", (int) (getenv("MSGPIT_SMTP_PORT") ?: 1025), $e, $s, 2); \
-        exit($web !== false && $smtp !== false ? 0 : 1);'
-
-CMD ["php", "-S", "0.0.0.0:8080", "-t", "public", "public/index.php"]
+VOLUME /data
+HEALTHCHECK --interval=10s --timeout=4s --start-period=10s --retries=3 CMD ["msgpit", "healthcheck"]
+ENTRYPOINT ["msgpit"]

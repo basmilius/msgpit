@@ -1,6 +1,12 @@
-/vendor/
-/.docksal/docksal-local.env
-/.docksal/docksal-local.yml
-/.idea/
-/.phpunit.cache/
+/target/
+/web/node_modules/
+/web/dist/
+/data/*
+!/data/caniemail.json
 *.sqlite
+*.sqlite-shm
+*.sqlite-wal
+.DS_Store
+/reference/vendor/
+/reference/.phpunit.cache/
+/.ruimte/
