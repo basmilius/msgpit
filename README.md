@@ -33,20 +33,26 @@ SQLite lives in the `msgpit_data` volume, separate from the PHP database. Stop t
 container with `docker compose stop`; bring it back with `docker compose up -d --wait`.
 Override host ports with `MSGPIT_HTTP_PORT` and `MSGPIT_SMTP_PORT` when needed.
 
-## Current scope
+## Features
 
-The first Rust implementation includes Spryng v2 message capture and balance,
-SMS segment analysis, one-shot failures and magic recipients, SMTP, MIME parsing,
-mail imports and attachment downloads, read state, retention and resumable SSE.
-The web inbox supports channel and recipient filters, source inspection and light/dark themes.
+Spryng v2 sends, balance and webhook administration are available, including on-demand
+Delivered/Failed callbacks with recorded responses. SMS analysis counts GSM septets,
+UCS-2 code units, segments and the characters that force Unicode encoding.
 
-This is the starting point for the rebuild. Spryng webhook administration and delivery
-reports, other providers, mail authentication, deliverability, link checks and spam
-scoring still need porting. Unsupported routes return errors and provider capabilities
-report delivery reports as unavailable. See [`docs/rebuild.md`](docs/rebuild.md).
+SMTP captures one entry per envelope recipient. Imports keep one entry and include
+To, Cc and Bcc recipients. Mail detail includes decoded headers, plain text, a sandboxed
+HTML preview, the original .eml download, formatted HTML and MIME source, attachments,
+caniemail compatibility, extracted links, SpamAssassin results and a deliverability report.
+Sender DNS checks cover SPF, DKIM, DMARC, forward-confirmed reverse DNS and 16 blocklists.
+Link probes and sender DNS run only when requested. SpamAssassin runs during capture
+when configured and reachable; a daemon failure does not lose the message.
 
-Command Center integration will follow after this container is ready. Command Center
-has not been changed by this rebuild.
+The Command Center interface supports channel and recipient filters, read state,
+retention, resumable SSE, multi-file import, themes, browser notifications and built-in
+documentation. The reference comparison is in [docs/parity.md](docs/parity.md).
+
+Command Center's own embedded service remains unchanged. Replacing it with an HTTP/SSE
+connection is the next task after reviewing this container.
 
 ## HTTP API
 
@@ -60,13 +66,17 @@ has not been changed by this rebuild.
 | `POST /api/messages/read` | Mark every message read |
 | `POST /api/messages/import` | Import raw .eml bytes; optional percent-encoded `X-Msgpit-Filename` |
 | `GET /api/messages/{id}/parts/{part}` | Download a MIME part or the original .eml |
+| `POST /api/messages/{id}/dlr` | Mark delivered/failed; call the configured webhook |
+| `POST /api/messages/{id}/links` | Probe extracted URLs on demand |
+| `POST /api/messages/{id}/authentication` | Extend the report with sender DNS checks |
+| `GET /api/docs` and `GET /api/docs/{slug}` | Built-in documentation |
 | `GET /api/providers` | Enabled provider capabilities |
 | `GET /api/scenarios` | Failure scenarios and magic recipients |
 | `POST /api/scenario` | Arm the next valid provider send with `{"scenario":"ServerError"}`; null disarms |
 | `GET /api/stream?seq=N` | Replay and live SSE; `Last-Event-ID` also supported |
 
-Message summaries retain the PHP API's camelCase fields. Additional mail detail fields
-are `html`, `headerList` and `parts`. SSE includes `message`, `read`, `cleared`, `scenario` and `reset`; reload the
+Message summaries retain the PHP API's camelCase fields. Mail details also include `text`, `html`, `headerList`, `parts`, `sourcePart`,
+`htmlCheck`, `links`, `spam` and `report`. SSE includes `message`, `read`, `cleared`, `scenario` and `reset`; reload the
 inbox on `reset` when a cursor is outside the retained event window.
 
 ## Configuration
@@ -74,16 +84,25 @@ inbox on `reset` when a cursor is outside the retained event window.
 | Variable | Default | Purpose |
 | --- | --- | --- |
 | `MSGPIT_HTTP_ADDR` | `0.0.0.0:8080` | HTTP listener inside the container |
+| `MSGPIT_SMTP` | `1` | Set to `0` to disable SMTP |
+| `MSGPIT_SMTP_PORT` | `1025` | Legacy SMTP port; overridden by an explicit SMTP address |
 | `MSGPIT_SMTP_ADDR` | `0.0.0.0:1025` | SMTP listener inside the container |
 | `MSGPIT_DB` | `/data/msgpit-rust.sqlite` | New Rust database; PHP data is not migrated |
 | `MSGPIT_WEB_DIR` | `/app/web` in Docker | Built web assets |
 | `MSGPIT_MAX_MESSAGES` | `1000` | Retain newest messages, remove associated files |
 | `MSGPIT_PROVIDERS` | `spryng` | Comma-separated enabled providers; empty disables provider HTTP routes |
+| `MSGPIT_SPRYNG_DLR_URL` | unset | Application webhook called when marking delivery status |
+| `MSGPIT_SPRYNG_DLR_HEADER` / `MSGPIT_SPRYNG_DLR_SECRET` | unset | Optional callback authentication; set both |
+| `MSGPIT_SPAMASSASSIN` | unset | spamd host:port, e.g. `spamassassin:783` |
+| `MSGPIT_DNS` | enabled | `off`, `0`, `false` or `no` disables sender DNS checks |
+| `MSGPIT_VERSION` | package version | Version reported by HTTP API |
 | `RUST_LOG` | `msgpit_server=info,tower_http=info` | Logging filter |
 
 HTTP bodies and SMTP messages are limited to 30 MiB. SMTP sessions have a 60-second
 idle timeout, a 128-connection cap and at most 100 recipients per transaction.
-The container runs as uid 10001. Its healthcheck tests HTTP and the SMTP greeting.
+The container runs as uid 10001. Its healthcheck tests HTTP and the SMTP greeting when enabled.
+Link checks probe up to 50 URLs with eight concurrent workers and bounded timeouts.
+Metadata service and link-local addresses are refused; redirects are reported rather than followed.
 
 ## Development
 
@@ -102,7 +121,7 @@ Vite proxies `/api` to `http://127.0.0.1:18080`.
 cargo fmt --all --check
 cargo clippy --workspace --all-targets -- -D warnings
 cargo test --workspace
-cd web && bun run build
+cd web && bun run build && bun run test
 ```
 
 Verify the built image, including its bundled UI, with:
@@ -113,8 +132,13 @@ python3 scripts/smoke.py
 ```
 
 The smoke test creates tagged SMS, SMTP and import samples and leaves them in the
-inbox for inspection. It does not clear existing captures. CI builds and tests the
-container on pull requests; it does not publish an image or a release.
+inbox for inspection. It does not clear existing captures. Run browser coverage with
+`cd web && bunx playwright install chromium && bun run test:browser` after starting Docker.
+
+CI runs Rust checks, source-renderer tests, container smoke tests and Playwright against
+the bundled UI. Published GitHub releases build amd64/arm64 images in GHCR. The workflow
+can also be run manually to publish a branch image. No release is created automatically.
+Build locally until the Rust image has been published; existing upstream tags contain PHP.
 
 ## Upstream workflow
 

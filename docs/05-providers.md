@@ -77,15 +77,12 @@ Two details decide whether your endpoint accepts the report:
   register an authentication method. Set both or neither.
 
 Full API notes, including the casing inconsistencies worth knowing about, are in
-`src/Provider/Spryng/CLAUDE.md` in the repository.
+`reference/src/Provider/Spryng/CLAUDE.md` in the repository.
 
 ## Adding one
 
-A provider is a class implementing `Provider`, plus optional capability interfaces for delivery
-reports and error scenarios. It parses the request, validates the required fields and the shape of
-the authentication, maps to `Message` objects and builds the provider-shaped response. It never
-touches storage and never makes an HTTP call.
-
-The core has no knowledge of any concrete provider, so adding one is a new directory and a line in
-`providers.php`. The contract test picks it up automatically from its fixtures. Steps are in the
-repository README.
+A provider implements the Rust `Provider` trait in `crates/server/src/providers`.
+It validates the request, produces normalized messages and returns a provider-shaped
+response without storage or network I/O. Optional delivery callbacks are request values;
+the core sends and records them. Register providers in `main.rs` and add HTTP fixtures
+and contract coverage before enabling them. Spryng is the current upstream provider.

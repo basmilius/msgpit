@@ -53,7 +53,7 @@ phishing message whatever the reason for it here. Url shorteners, which hide the
 ## The checks that ask DNS
 
 SPF, DKIM, DMARC and reverse DNS cannot be answered from the message alone: the answer lives in the
-sender's own zone. Those run when you open the Deliverability tab, not when you open the message.
+sender's own zone. Use **Check sender DNS** in the Deliverability tab to run them. Opening the message or tab makes no outbound request.
 Reading your post should never wait on a resolver, and most of the time you are not asking this
 question at all. `MSGPIT_DNS=off` switches it off entirely, and the checks then report as not
 applicable rather than failing.
@@ -69,7 +69,7 @@ beside it, which is what a `.eml` from a Sent folder looks like. A failing body 
 its own thing, because a mail client that re-encoded the message on export is a far likelier cause
 than a bad key.
 
-Opening the tab also asks sixteen blocklists whether they know the sending address. That is a
+The sender check also asks sixteen blocklists whether they know the sending address. That is a
 question about the machine, not about the message, so it means nothing for mail that never crossed
 a network. A listing is read against the list that gave it: the code in the answer is not simply
 "yes", and the same `127.0.0.1` that means spam source on one list means known good on another. A

@@ -1,7 +1,7 @@
 name: Check rebuild
 on:
   push:
-    branches: [feat/rust-rebuild]
+    branches: [main, dev, feat/rust-rebuild]
   pull_request:
 permissions:
   contents: read
@@ -21,8 +21,14 @@ jobs:
       - run: cargo test --workspace --locked
       - run: bun install --frozen-lockfile && bun run build
         working-directory: web
+      - run: bun run test
+        working-directory: web
+      - run: bunx playwright install --with-deps chromium
+        working-directory: web
       - run: docker compose up --build -d --wait
       - run: python3 scripts/smoke.py
+      - run: bun run test:browser
+        working-directory: web
       - if: failure()
         run: docker compose logs
       - if: always()

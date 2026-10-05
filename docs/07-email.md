@@ -22,7 +22,7 @@ Symfony Mailer with `smtp://mail:1025`, and Laravel with `MAIL_HOST=mailpit` all
 services:
   msgpit:
     hostname: msgpit
-    image: ${MSGPIT_IMAGE:-ghcr.io/axilium/msgpit:1}
+    image: msgpit:local
     volumes:
       - msgpit_data:/data
     networks:
@@ -44,7 +44,7 @@ password, it simply will not use them.
 **Preview** renders the html exactly as the recipient would get it, in a sandboxed frame with no
 scripts and no access to msgpit. Images the mail carries with it are referenced by `cid:`, which
 means nothing to a browser, so msgpit rewrites them to the part they point at. An image the mail
-loads from the internet is left alone and will simply not appear when you are offline.
+loads from the internet remains blocked until you inspect it separately.
 
 **Text** shows the plain text alternative, when there is one. Worth a look: it is the version that
 goes to anyone reading mail without html, and it is the one people forget to keep in step.
@@ -55,7 +55,7 @@ Filenames with accents survive.
 **Headers** lists every header the sender wrote, not the handful in the summary. This is where
 mail analysis actually happens: a missing `Date`, a `Return-Path` that disagrees with `From`, a
 `List-Unsubscribe` that never made it in, an `Auto-Submitted` that decides whether an
-auto-responder will answer you. The addresses come first, the rest is alphabetical. A `Bcc` is
+auto-responder will answer you. The headers remain in their original order. A `Bcc` is
 visible here and nowhere else.
 
 **Source** holds two views of what the message is made of, because it is one question asked twice.
@@ -212,8 +212,7 @@ Files up to 30 MB are accepted.
 ## What is not there
 
 msgpit accepts a message and stores it. It never delivers, never bounces, and never answers a
-delivery status notification. SpamAssassin scoring is a separate feature and is documented with
-the rest of the API once it lands.
+delivery status notification. SpamAssassin scoring is optional; set `MSGPIT_SPAMASSASSIN` to a reachable spamd host and port.
 
 Every recipient of one mail becomes its own message sharing a `batchId`, and the **envelope**
 decides who those recipients are, not the `To` header. That is how delivery actually works, and it

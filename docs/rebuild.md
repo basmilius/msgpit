@@ -1,46 +1,37 @@
 # Rebuild decisions
 
-The container owns message capture, persistence and the web UI. Command Center will
-be an HTTP/SSE client. It will not start another embedded catcher or access SQLite.
-A single container per project is the initial deployment model. URL project prefixes
-from Command Center are not implemented in this first version.
+The container owns capture, SQLite and the web UI. Command Center will connect over
+HTTP/SSE after the container review. Its embedded service has not been changed.
 
-The executable binds both listeners before becoming ready. If a listener fails,
-the process exits so Docker can restart it. SIGTERM cancels SMTP sessions and drains
-HTTP requests. SQLite work runs on blocking workers, outside Tokio's async workers.
-Captures, associated files and events commit in one transaction.
+One container per project keeps provider URLs identical to upstream Msgpit. Providers
+translate requests and produce normalized messages and responses without I/O. Storage,
+SMTP and HTTP depend on that contract. The current upstream provider is Spryng.
 
-Providers translate HTTP requests into normalized messages and provider-shaped
-responses. They perform no I/O. The executable registers concrete implementations.
-Spryng send/balance behavior is checked against fixtures preserved from the PHP version.
-Its webhook and delivery-report endpoints are deferred and advertised as unavailable.
+Axum handles HTTP, mail-parser handles MIME and mail-auth verifies SPF and DKIM. DNS
+uses the container resolver and TTL caching. Deliverability content checks run locally;
+sender DNS and link probes run only on explicit requests. SpamAssassin is optional
+and a scoring failure never prevents capture.
 
-MIME parsing uses mail-parser; HTTP routing uses Axum. These dependencies replace
-proof-of-concept parsers rather than preserving the PHP restriction on packages.
-The UI uses the published Desktop UI package and its Tailwind theme.
+The server binds enabled listeners before reporting readiness. A bind failure exits
+and lets Docker restart it. SIGTERM stops SMTP sessions and gracefully drains HTTP.
+SQLite runs on blocking workers. Messages, parts and events commit together.
 
-The new database uses `rust_` tables and a separate default filename. It does not
-claim to migrate PHP captures. A migration can be added if keeping old development
-messages becomes necessary.
-
-## Follow-up work
-
-- Port Spryng webhook administration and delivery callbacks with fixture coverage.
-- Decide which additional provider APIs are needed before adding adapters.
-- Port mail reports and opt-in network checks without enabling outbound work during capture.
-- Define release and image publishing for the Rust implementation after upstream review.
-- Replace Command Center's embedded capture service with connection configuration and HTTP/SSE.
-- Decide whether a shared container needs project scopes; keep that decision in the API contract.
+The database uses `rust_` tables and a separate default filename. The PHP proof of
+concept and its fixtures remain in `reference/`. No development captures are migrated
+or deleted by the rebuild.
 
 ## UI source
 
-The shell, sidebar, two toolbars, 340-pixel inbox, mail tabs, SMS analysis and setup
-rows follow Command Center's `apps/client/src/shell` and `features/messages`.
-`Tabs` and `KeyValueList` are copied from its pending components. The UI uses the
-published `@basmilius/desktop-ui` package from `basmilius/desktop`, including its
-theme, settings dialog, list rows, segmented controls and confirmation dialogs.
+The shell, sidebar, two toolbars, 340-pixel inbox, mail tabs, SMS analysis, delivery
+panel and setup rows are ported from Command Center. `Tabs` and `KeyValueList` retain
+its pending components. The UI uses the published `@basmilius/desktop-ui` package,
+including its theme, list rows, settings dialog, controls and confirmation dialogs.
+The HTTP adapter replaces the Electron bridge.
 
-The API adapter replaces Command Center's Electron bridge. Project selection,
-assistant actions, delivery reports and mail checks are omitted until their
-standalone equivalents exist. The source block uses a selectable `pre` and the
-Desktop UI copy button rather than importing Command Center's chat renderer.
+The formatted HTML and raw MIME renderers come from upstream Msgpit. Their original
+30 tests verify escaping and source preservation. Documentation uses react-markdown
+with raw HTML disabled. Captured message HTML runs in a separate sandboxed frame.
+
+See [parity.md](parity.md) for the implemented upstream features, verification and
+deliberate differences. The remaining application work is replacing Command Center's
+embedded catcher with connection settings and this HTTP/SSE client.
